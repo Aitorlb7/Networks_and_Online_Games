@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 
-public class UCP_Client : MonoBehaviour
+public class UDP_Client : MonoBehaviour
 {
     private Thread waitingThread;
     private Thread sendThread;
@@ -22,12 +22,10 @@ public class UCP_Client : MonoBehaviour
 
     private int recievedData;
     private string recievedMessage;
-    private bool recievedPong = false;
+    private bool recievedPong = true;
     private float sleepSeconds = 5000;
     void Start()
     {
-        
-
         serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         ip = new IPEndPoint(IPAddress.Any, port);
         serverSocket.Bind(ip);
@@ -57,14 +55,17 @@ public class UCP_Client : MonoBehaviour
 
     void RecieveData()
     {
-        Debug.Log("Starting Thread");
+        Debug.Log("Starting Client Thread");
 
         data = new byte[1024];
         recievedData = serverSocket.ReceiveFrom(data, ref remoteIP);
         recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+
+        Debug.Log(recievedMessage);
+
         if (recievedMessage == "Pong")
         {
-            Console.WriteLine(recievedMessage);
+            Debug.Log(recievedMessage);
             recievedPong = true;
         }
 
