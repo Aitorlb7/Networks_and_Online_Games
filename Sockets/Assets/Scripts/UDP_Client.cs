@@ -24,13 +24,18 @@ public class UDP_Client : MonoBehaviour
     private string recievedMessage;
     private bool recievedPong = true;
     private float sleepSeconds = 5000;
+
+    static readonly object lockObject = new object();
+
     void Start()
     {
+        waitingThread = new Thread(RecieveData);
+        waitingThread.Start();
+
         serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         ip = new IPEndPoint(IPAddress.Any, port);
         serverSocket.Bind(ip);
 
-        remoteIP = new IPEndPoint(IPAddress.Parse(IP), port);
 
     }
 
@@ -39,37 +44,42 @@ public class UDP_Client : MonoBehaviour
     {
         if (recievedPong)
         {
-            data = Encoding.ASCII.GetBytes(pingMessage);
-            serverSocket.SendTo(Encoding.ASCII.GetBytes(pingMessage), remoteIP);
-            recievedPong = false;
-            data = new byte[1024];
-        }
-        else
-        {
-            waitingThread = new Thread(RecieveData);
-            waitingThread.Start();
-
-            
+            lock (lockObject)
+            {
+                data = Encoding.ASCII.GetBytes(pingMessage);
+                serverSocket.SendTo(Encoding.ASCII.GetBytes(pingMessage), remoteIP);
+                recievedPong = false;
+                data = new byte[1024];
+            }
         }
     }
 
     void RecieveData()
     {
         Debug.Log("Starting Client Thread");
-
-        data = new byte[1024];
-        recievedData = serverSocket.ReceiveFrom(data, ref remoteIP);
-        recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-
-        Debug.Log(recievedMessage);
-
-        if (recievedMessage == "Pong")
+        while (true)
         {
-            Debug.Log(recievedMessage);
-            recievedPong = true;
+            remoteIP = new IPEndPoint(IPAddress.Parse(IP), port);
+            recievedData = serverSocket.ReceiveFrom(data, ref remoteIP);
+            lock (lockObject)
+            {
+                recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+
+                Debug.Log(recievedMessage);
+
+                if (recievedMessage == "Pong")
+                {
+                    Debug.Log(recievedMessage);
+                    recievedPong = true;
+                }
+            }
         }
 
+            
+
+        
+
         //Stop thread
-        waitingThread.Abort();
+        //waitingThread.Abort();
     }
 }

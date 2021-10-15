@@ -23,14 +23,19 @@ public class UDP_Server : MonoBehaviour
     private string recievedMessage;
     private bool recievedPing = false;
     private float sleepSeconds = 5000;
-    // Start is called before the first frame update
+
+    static readonly object lockObject = new object();
     void Start()
     {
+        waitingThread = new Thread(RecieveData);
+        waitingThread.Start();
+
+
         newSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         ip = new IPEndPoint(IPAddress.Parse(IP), port);
         newSocket.Bind(ip);
 
-        remoteIP = new IPEndPoint(IPAddress.Any, port);
+       
     }
 
     // Update is called once per frame
@@ -39,15 +44,18 @@ public class UDP_Server : MonoBehaviour
 
         if (recievedPing)
         {
-            data = Encoding.ASCII.GetBytes(pongMessage);
-            newSocket.SendTo(Encoding.ASCII.GetBytes(pongMessage), remoteIP);
-            recievedPing = false;
-            data = new byte[1024];
-        }
-        else
-        {
-            waitingThread = new Thread(RecieveData);
-            waitingThread.Start();
+            lock (lockObject)
+            {
+                data = Encoding.ASCII.GetBytes(pongMessage);
+
+                //RemoteIP is Wrong
+                newSocket.SendTo(Encoding.ASCII.GetBytes(pongMessage), remoteIP);
+                
+                recievedPing = false;
+                data = new byte[1024];
+            }
+            
+            
         }
 
     }
@@ -56,20 +64,31 @@ public class UDP_Server : MonoBehaviour
     {
         Debug.Log("Starting Server Thread");
 
-        data = new byte[1024];
-        recievedData = newSocket.ReceiveFrom(data, ref remoteIP);
-        recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-
-        Debug.Log(recievedMessage);
-
-        if (recievedMessage == "Pong")
+        while(true)
         {
-            Debug.Log(recievedMessage);
-            recievedPing = true;
+             remoteIP = new IPEndPoint(IPAddress.Any, port);
+             recievedData = newSocket.ReceiveFrom(data, ref remoteIP);
+
+            lock (lockObject)
+            {
+                
+                recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+
+                Debug.Log(recievedMessage);
+
+                if (recievedMessage == "Ping")
+                {
+                    Debug.Log(recievedMessage);
+                    recievedPing = true;
+                }
+            }
+
         }
 
+        
+
         //Stop thread
-        waitingThread.Abort();
+        //waitingThread.Abort();
     }
 
 }
