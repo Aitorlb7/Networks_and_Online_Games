@@ -199,7 +199,6 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
-  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &589129260
@@ -226,6 +225,7 @@ GameObject:
   m_Component:
   - component: {fileID: 694404731}
   - component: {fileID: 694404732}
+  - component: {fileID: 694404733}
   m_Layer: 0
   m_Name: UDP_Server
   m_TagString: Untagged
@@ -254,7 +254,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 694404730}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74d6406b77fe83e479e73345036aa53f, type: 3}
   m_Name: 
@@ -262,5 +262,21 @@ MonoBehaviour:
   ownPort: 7777
   destPort: 8888
   message: Pong
-  sleepSeconds: 50000
+  sleepSeconds: 500
   isClient: 0
+--- !u!114 &694404733
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 694404730}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f60cc40cbca009945851a5c7ae9b7956, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ownPort: 7777
+  destPort: 8888
+  message: Pong
+  sleepSeconds: 2000

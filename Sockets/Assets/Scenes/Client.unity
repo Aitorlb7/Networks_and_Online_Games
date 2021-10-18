@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 705507994}
-  m_IndirectSpecularColor: {r: 0.44657898, g: 0.4964133, b: 0.5748178, a: 1}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -199,7 +199,6 @@ Light:
   m_UseColorTemperature: 0
   m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
   m_UseBoundingSphereOverride: 0
-  m_UseViewFrustumForShadowCasterCull: 1
   m_ShadowRadius: 0
   m_ShadowAngle: 0
 --- !u!4 &705507995
@@ -309,6 +308,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1774911749}
   - component: {fileID: 1774911750}
+  - component: {fileID: 1774911751}
   m_Layer: 0
   m_Name: UDP_Client
   m_TagString: Untagged
@@ -337,7 +337,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1774911748}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 74d6406b77fe83e479e73345036aa53f, type: 3}
   m_Name: 
@@ -345,5 +345,21 @@ MonoBehaviour:
   ownPort: 8888
   destPort: 7777
   message: Ping
-  sleepSeconds: 50000
+  sleepSeconds: 500
   isClient: 1
+--- !u!114 &1774911751
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1774911748}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 942052f1d734c614488961f08bc6eb2e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ownPort: 8888
+  destPort: 7777
+  message: Ping
+  sleepSeconds: 2000

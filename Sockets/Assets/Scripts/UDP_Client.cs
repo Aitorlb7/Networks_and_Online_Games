@@ -1,11 +1,13 @@
-using System;
+﻿using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine;
 
-public class UDP : MonoBehaviour
+public class UDP_Client : MonoBehaviour
 {
     private Thread thread = null;
 
@@ -14,69 +16,46 @@ public class UDP : MonoBehaviour
     private IPEndPoint ip;
     private EndPoint remoteIP;
 
-    private string IP = "127.0.0.1";  
+    private string IP = "127.0.0.1";
     private byte[] data = new byte[1024];
 
     private int recievedData;
     private string recievedMessage;
-    private bool readyToSend;
 
-    static readonly object lockObject = new object();
-
-    public int ownPort = 7777;
-    public int destPort = 7777;
-    public string message = "Ping";
+    public int ownPort;
+    public int destPort;
+    public string message;
     public int sleepSeconds;
-    public bool isClient;
-
-
     void Start()
     {
-        ip = new IPEndPoint(IPAddress.Any, ownPort);
-        remoteIP = new IPEndPoint(IPAddress.Parse(IP), destPort);
+        ip = new IPEndPoint(IPAddress.Parse(IP), ownPort);
+        remoteIP = new IPEndPoint(IPAddress.Any, destPort);
 
         UDPSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        
-
-        readyToSend = isClient;
+        UDPSocket.Bind(ip);
 
         thread = new Thread(Listen);
         thread.Start();
-
     }
 
-
+    // Update is called once per frame
     void Update()
     {
-        //lock (lockObject)
-        //{
-        //    if (readyToSend)
-        //    {
-        //        resting.Start();
 
-        //        SendMessage();
-
-        //    }
-        //    else
-        //    {
-        //        active.Start();
-        //    }
-        //}
-        
     }
-
 
     void Listen()
     {
-        Debug.Log("Starting Listening Thread");
-            data = new byte[1024];
+        Debug.Log("Starting Server Thread");
+        data = new byte[1024];
 
-        if(isClient)
-            SendMessage();
+        SendMessage();
+
 
         while (true)
         {
             recievedData = UDPSocket.ReceiveFrom(data, ref remoteIP);
+            Debug.Log("Recieved:" + recievedData);
 
             if (recievedData > 0)
             {
@@ -88,8 +67,8 @@ public class UDP : MonoBehaviour
                 SendMessage();
 
             }
-            
-            
+
+
         }
 
         //thread.Abort();
@@ -110,6 +89,8 @@ public class UDP : MonoBehaviour
         catch
         {
             Debug.Log("Failed to send message");
+
+            SendMessage();
         }
     }
 }
