@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UDP_Server : MonoBehaviour
 {
@@ -85,5 +86,11 @@ public class UDP_Server : MonoBehaviour
         {
             Debug.Log("Failed to send message");
         }
+    }
+
+    public void DisconnectAndDestroy()
+    {
+        //Socket.CancelConnectAsync();
+        thread.Abort();
     }
 }

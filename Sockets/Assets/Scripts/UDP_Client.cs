@@ -3,9 +3,9 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using UnityEngine;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UDP_Client : MonoBehaviour
 {
@@ -92,5 +92,11 @@ public class UDP_Client : MonoBehaviour
 
             SendMessage();
         }
+    }
+
+    public void DisconnectAndDestroy()
+    {
+        //Socket.CancelConnectAsync();
+        thread.Abort();
     }
 }
