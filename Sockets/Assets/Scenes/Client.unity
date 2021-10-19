@@ -717,7 +717,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 942052f1d734c614488961f08bc6eb2e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  ownPort: 8888
-  destPort: 7777
+  ownPort: 3333
+  destPort: 2222
   message: Ping
   sleepSeconds: 2000

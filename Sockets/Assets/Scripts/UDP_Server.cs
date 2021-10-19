@@ -8,10 +8,10 @@ using UnityEngine.UI;
 
 public class UDP_Server : MonoBehaviour
 {
-    private Thread thread = null;
+    private Thread newThread = null;
 
 
-    private Socket UDPSocket;
+    private Socket serverSocket;
     private IPEndPoint ip;
     private EndPoint remoteIP;
 
@@ -30,12 +30,13 @@ public class UDP_Server : MonoBehaviour
         ip = new IPEndPoint(IPAddress.Any, ownPort);
         remoteIP = new IPEndPoint(IPAddress.Any, destPort);
 
-        UDPSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        UDPSocket.Bind(ip);
+        serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        serverSocket.Bind(ip);
 
-        thread = new Thread(Listen);
-        thread.Start();
+        newThread = new Thread(Listen);
+        newThread.Start();
     }
+
 
     // Update is called once per frame
     void Update()
@@ -48,15 +49,18 @@ public class UDP_Server : MonoBehaviour
         Debug.Log("Starting Server Thread");
         data = new byte[1024];
 
+        //recievedData = serverSocket.ReceiveFrom(data, ref remoteIP);
+
+
         while (true)
         {
-            recievedData = UDPSocket.ReceiveFrom(data, ref remoteIP);
-            Debug.Log("Recieved:" + recievedData);
+            recievedData = serverSocket.ReceiveFrom(data, ref remoteIP);
+            Debug.Log("Server Recieved:" + recievedData);
 
             if (recievedData > 0)
             {
                 recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-                Debug.Log("Recieved:" + recievedMessage);
+                Debug.Log("Server Recieved:" + recievedMessage);
 
                 Thread.Sleep(sleepSeconds);
 
@@ -76,7 +80,7 @@ public class UDP_Server : MonoBehaviour
         {
             data = Encoding.ASCII.GetBytes(message);
 
-            UDPSocket.SendTo(data, remoteIP);
+            serverSocket.SendTo(data, remoteIP);
 
             data = new byte[1024];
 
@@ -84,13 +88,13 @@ public class UDP_Server : MonoBehaviour
         }
         catch
         {
-            Debug.Log("Failed to send message");
+            Debug.Log("Server: Failed to send message");
         }
     }
 
     public void DisconnectAndDestroy()
     {
         //Socket.CancelConnectAsync();
-        thread.Abort();
+        newThread.Abort();
     }
 }

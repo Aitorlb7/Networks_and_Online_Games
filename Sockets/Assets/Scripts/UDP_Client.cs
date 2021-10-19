@@ -28,8 +28,8 @@ public class UDP_Client : MonoBehaviour
     public int sleepSeconds;
     void Start()
     {
-        ip = new IPEndPoint(IPAddress.Parse(IP), ownPort);
-        remoteIP = new IPEndPoint(IPAddress.Any, destPort);
+        ip = new IPEndPoint(IPAddress.Any, ownPort);
+        remoteIP = new IPEndPoint(IPAddress.Parse(IP), destPort);
 
         UDPSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
         UDPSocket.Bind(ip);
@@ -46,21 +46,21 @@ public class UDP_Client : MonoBehaviour
 
     void Listen()
     {
-        Debug.Log("Starting Server Thread");
+        Debug.Log("Starting Client Thread");
         data = new byte[1024];
 
-        SendMessage();
+        data = Encoding.ASCII.GetBytes(message);
 
+        UDPSocket.SendTo(data, remoteIP);
 
         while (true)
         {
             recievedData = UDPSocket.ReceiveFrom(data, ref remoteIP);
-            Debug.Log("Recieved:" + recievedData);
 
             if (recievedData > 0)
             {
                 recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-                Debug.Log("Recieved:" + recievedMessage);
+                Debug.Log("Client Recieved:" + recievedMessage);
 
                 Thread.Sleep(sleepSeconds);
 
@@ -84,19 +84,28 @@ public class UDP_Client : MonoBehaviour
 
             data = new byte[1024];
 
+            Debug.Log("Client sent message to: " + remoteIP.ToString());
+
             //readyToSend = false;
         }
         catch
         {
-            Debug.Log("Failed to send message");
+            Debug.Log("Client: Failed to send message");
 
-            SendMessage();
+            Debug.Log("Client End Point: " + UDPSocket.RemoteEndPoint.ToString());
+
+            Debug.Log("Client End Point: " + UDPSocket.LocalEndPoint.ToString());
+
+            //SendMessage();
         }
     }
 
     public void DisconnectAndDestroy()
     {
         //Socket.CancelConnectAsync();
-        thread.Abort();
+        //thread.Abort();
+        UDPSocket.Close();
+        thread.Interrupt();
+        thread = null;
     }
 }
