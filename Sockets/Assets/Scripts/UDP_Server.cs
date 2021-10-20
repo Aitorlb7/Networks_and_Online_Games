@@ -35,6 +35,8 @@ public class UDP_Server : MonoBehaviour
 
         newThread = new Thread(Listen);
         newThread.Start();
+
+        data = new byte[1024];
     }
 
 
@@ -47,15 +49,11 @@ public class UDP_Server : MonoBehaviour
     void Listen()
     {
         Debug.Log("Starting Server Thread");
-        data = new byte[1024];
-
-        //recievedData = serverSocket.ReceiveFrom(data, ref remoteIP);
-
+        
 
         while (true)
         {
             recievedData = serverSocket.ReceiveFrom(data, ref remoteIP);
-            Debug.Log("Server Recieved:" + recievedData);
 
             if (recievedData > 0)
             {
@@ -94,7 +92,18 @@ public class UDP_Server : MonoBehaviour
 
     public void DisconnectAndDestroy()
     {
-        //Socket.CancelConnectAsync();
+
+        serverSocket.Close();
         newThread.Abort();
+        newThread = null;
+    }
+
+    void Reconnect()
+    {
+        serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        serverSocket.Bind(ip);
+
+        newThread = new Thread(Listen);
+        newThread.Start();
     }
 }

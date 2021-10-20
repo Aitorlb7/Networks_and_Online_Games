@@ -12,7 +12,7 @@ public class UDP_Client : MonoBehaviour
     private Thread thread = null;
 
 
-    private Socket UDPSocket;
+    private Socket clientSocket;
     private IPEndPoint ip;
     private EndPoint remoteIP;
 
@@ -31,11 +31,13 @@ public class UDP_Client : MonoBehaviour
         ip = new IPEndPoint(IPAddress.Any, ownPort);
         remoteIP = new IPEndPoint(IPAddress.Parse(IP), destPort);
 
-        UDPSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        UDPSocket.Bind(ip);
+        clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        clientSocket.Bind(ip);
 
         thread = new Thread(Listen);
         thread.Start();
+
+        data = new byte[1024];
     }
 
     // Update is called once per frame
@@ -47,15 +49,13 @@ public class UDP_Client : MonoBehaviour
     void Listen()
     {
         Debug.Log("Starting Client Thread");
-        data = new byte[1024];
+        
 
-        data = Encoding.ASCII.GetBytes(message);
-
-        UDPSocket.SendTo(data, remoteIP);
+        SendMessage();
 
         while (true)
         {
-            recievedData = UDPSocket.ReceiveFrom(data, ref remoteIP);
+            recievedData = clientSocket.ReceiveFrom(data, ref remoteIP);
 
             if (recievedData > 0)
             {
@@ -80,11 +80,11 @@ public class UDP_Client : MonoBehaviour
         {
             data = Encoding.ASCII.GetBytes(message);
 
-            UDPSocket.SendTo(data, remoteIP);
+            clientSocket.SendTo(data, remoteIP);
 
             data = new byte[1024];
 
-            Debug.Log("Client sent message to: " + remoteIP.ToString());
+            //Debug.Log("Client sent message to: " + remoteIP.ToString());
 
             //readyToSend = false;
         }
@@ -92,9 +92,9 @@ public class UDP_Client : MonoBehaviour
         {
             Debug.Log("Client: Failed to send message");
 
-            Debug.Log("Client End Point: " + UDPSocket.RemoteEndPoint.ToString());
+            Debug.Log("Client End Point: " + clientSocket.RemoteEndPoint.ToString());
 
-            Debug.Log("Client End Point: " + UDPSocket.LocalEndPoint.ToString());
+            Debug.Log("Client End Point: " + clientSocket.LocalEndPoint.ToString());
 
             //SendMessage();
         }
@@ -102,10 +102,19 @@ public class UDP_Client : MonoBehaviour
 
     public void DisconnectAndDestroy()
     {
-        //Socket.CancelConnectAsync();
-        //thread.Abort();
-        UDPSocket.Close();
-        thread.Interrupt();
+
+        clientSocket.Close();
+        thread.Abort();
         thread = null;
     }
+
+    void Reconnect()
+    {
+        clientSocket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        clientSocket.Bind(ip);
+
+        thread = new Thread(Listen);
+        thread.Start();
+    }
+   
 }
