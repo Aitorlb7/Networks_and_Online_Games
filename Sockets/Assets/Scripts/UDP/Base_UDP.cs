@@ -20,10 +20,31 @@ public class Base_UDP : MonoBehaviour
     protected int recievedData;
     protected string recievedMessage;
 
+    protected readonly object lockObject = new object();
+
     public int ownPort;
     public int destPort;
     public string message;
     public int sleepSeconds;
+
+
+    public Text consoleText;
+    private string consoleString;
+    bool updateConsole;
+
+    private void Update()
+    {
+        if(updateConsole)
+        {
+            lock (lockObject)
+            {
+                consoleText.text = consoleString;
+                updateConsole = false;
+
+                //Debug.Log("Text so far:" + consoleString);
+            }
+        }
+    }
 
     protected virtual void Listen()
     {
@@ -35,6 +56,8 @@ public class Base_UDP : MonoBehaviour
             {
                 recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
                 Debug.Log("Recieved:" + recievedMessage);
+
+                AddTextToConsole(recievedMessage);
 
                 Thread.Sleep(sleepSeconds);
 
@@ -55,9 +78,10 @@ public class Base_UDP : MonoBehaviour
             data = new byte[1024];
 
         }
-        catch
+        catch (Exception e)
         {
             Debug.Log("Failed to send message");
+            Debug.LogError(e.StackTrace);
         }
     }
 
@@ -70,10 +94,16 @@ public class Base_UDP : MonoBehaviour
 
     public virtual void Reconnect()
     {
-        socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        socket.Bind(ip);
+    }
 
-        thread = new Thread(Listen);
-        thread.Start();
+    void AddTextToConsole(string textToAdd)
+    {
+        lock(lockObject)
+        {
+            consoleString += textToAdd + "\r\n";
+            updateConsole = true;
+        }
+          
+        
     }
 }

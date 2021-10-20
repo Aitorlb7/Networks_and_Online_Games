@@ -35,4 +35,13 @@ public class UDP_Client : Base_UDP
 
         base.Listen();
     }
+
+    public override void Reconnect()
+    {
+        socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+        socket.Bind(ip);
+
+        thread = new Thread(Listen);
+        thread.Start();
+    }
 }
