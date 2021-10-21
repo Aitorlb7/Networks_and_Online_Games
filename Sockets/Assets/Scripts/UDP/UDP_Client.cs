@@ -36,10 +36,20 @@ public class UDP_Client : Base_UDP
         base.Listen();
     }
 
-    public override void Reconnect()
+    public void DisconnectAndDestroy()
     {
-        socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        socket.Bind(ip);
+        breakAndDisconect = true;
+    }
+
+    public void Reconnect()
+    {
+        if (socket == null)
+        {
+            Debug.Log("Reconnecting Client Socket");
+
+            socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            socket.Bind(ip);
+        }
 
         thread = new Thread(Listen);
         thread.Start();

@@ -28,17 +28,7 @@ public class UDP_Server : Base_UDP
     {
         Debug.Log("Starting Server Thread");
 
-        //recivedText.text += "\r\n" + "Starting Server Thread" + "\r\n";
-
         base.Listen();
     }
- 
-    public override void Reconnect()
-    {
-        socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-        socket.Bind(ip);
 
-        thread = new Thread(Listen);
-        thread.Start();
-    }
 }

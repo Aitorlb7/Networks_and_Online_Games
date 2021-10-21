@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -15,12 +16,13 @@ public class Base_UDP : MonoBehaviour
     protected IPEndPoint ip;
     protected EndPoint remoteIP;
 
-    protected byte[] data = new byte[64];
+    protected byte[] data = new byte[1024];
 
     protected int recievedData;
     protected string recievedMessage;
 
     protected readonly object lockObject = new object();
+
 
     public int ownPort;
     public int destPort;
@@ -29,7 +31,8 @@ public class Base_UDP : MonoBehaviour
 
 
     public Text consoleText;
-    private string consoleString;
+    private List<string> consoleStrings = new List<string>();
+    protected bool breakAndDisconect;
     bool updateConsole;
 
     private void Update()
@@ -38,11 +41,32 @@ public class Base_UDP : MonoBehaviour
         {
             lock (lockObject)
             {
-                consoleText.text = consoleString;
-                updateConsole = false;
+                foreach(string message in consoleStrings)
+                {
+                    consoleText.text += message;
 
-                //Debug.Log("Text so far:" + consoleString);
+                    Debug.Log(consoleText.text);
+
+                }
+
+                updateConsole = false;
             }
+        }
+    }
+    private void OnDestroy()
+    {
+        Debug.Log("Disconecting Socket and aborting Thread");
+
+        if (socket != null)
+        {
+            socket.Close();
+            socket = null;
+        }
+
+        if (thread.IsAlive)
+        {
+            thread.Abort();
+            thread = null;
         }
     }
 
@@ -50,21 +74,44 @@ public class Base_UDP : MonoBehaviour
     {
         while (true)
         {
-            recievedData = socket.ReceiveFrom(data, ref remoteIP);
+            if (breakAndDisconect)
+            {
+                break;
+            }
+
+            try
+            {
+                recievedData = socket.ReceiveFrom(data, ref remoteIP);
+            }
+            catch
+            {
+                AddTextToConsole("ERROR: Can't recieve message");
+                continue;
+            }
 
             if (recievedData > 0)
             {
                 recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-                Debug.Log("Recieved:" + recievedMessage);
 
-                AddTextToConsole(recievedMessage);
+                recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+
+                AddTextToConsole("Recieved:" + recievedMessage);
 
                 Thread.Sleep(sleepSeconds);
 
                 SendMessage();
 
+                AddTextToConsole("Sent:" + message);
+
             }
         }
+
+        Debug.Log("Disconnecting Socket");
+
+        breakAndDisconect = false;
+        socket.Close();
+        socket = null;
+
     }
 
     protected virtual void SendMessage()
@@ -80,30 +127,20 @@ public class Base_UDP : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.Log("Failed to send message");
+            AddTextToConsole("Failed to send message");
             Debug.LogError(e.StackTrace);
         }
     }
-
-    public virtual void DisconnectAndDestroy()
-    {
-        socket.Close();
-        thread.Abort();
-        thread = null;
-    }
-
-    public virtual void Reconnect()
-    {
-    }
-
     void AddTextToConsole(string textToAdd)
     {
         lock(lockObject)
         {
-            consoleString += textToAdd + "\r\n";
+            consoleStrings.Add(textToAdd);
+
             updateConsole = true;
         }
-          
+
         
+
     }
 }

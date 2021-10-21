@@ -1183,7 +1183,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: 'Client:'
+  m_Text: 
 --- !u!222 &1130722219
 CanvasRenderer:
   m_ObjectHideFlags: 0
