@@ -62,13 +62,9 @@ public class TCP_Client : MonoBehaviour
                 }
 
                 foreach (string message in consoleStrings)
-                {
                     consoleText.text += message + '\n';
 
-                    consoleStrings.Remove(message);
-
-                }
-
+                consoleStrings.Clear();
 
                 updateConsole = false;
             }
