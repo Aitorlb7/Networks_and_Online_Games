@@ -35,24 +35,35 @@ public class Base_UDP : MonoBehaviour
     protected bool breakAndDisconect;
     bool updateConsole;
 
+    private int logNum = 0;
+    private int consoleLogLimit = 16;
+
     private void Update()
     {
-        if(updateConsole && consoleStrings.Count > 0)
-        {
+        if(updateConsole)
+        {   
             lock (lockObject)
             {
-                foreach(string message in consoleStrings)
+                if (logNum >= consoleLogLimit)
+                {
+                    consoleText.text = "";
+                    logNum = 0;
+                }
+
+                logNum += consoleStrings.Count;
+
+                foreach (string message in consoleStrings)
                 {
                     consoleText.text += message + '\n';
 
                     consoleStrings.Remove(message);
-
                 }
 
                 updateConsole = false;
             }
         }
     }
+
     private void OnDestroy()
     {
         Debug.Log("Disconecting Socket and aborting Thread");
@@ -131,14 +142,14 @@ public class Base_UDP : MonoBehaviour
             Debug.LogError(e.StackTrace);
         }
     }
+
     protected void AddTextToConsole(string textToAdd)
     {
-        lock(lockObject)
+        lock (lockObject)
         {
             consoleStrings.Add(textToAdd);
 
             updateConsole = true;
         }
-
     }
 }

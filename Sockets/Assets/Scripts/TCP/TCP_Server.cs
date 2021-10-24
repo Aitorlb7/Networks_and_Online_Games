@@ -31,6 +31,7 @@ public class TCP_Server : MonoBehaviour
     private List<string> consoleStrings = new List<string>();
     private bool updateConsole;
     private bool clearConsole;
+
     void Start()
     {
         data = new byte[1024];
@@ -69,7 +70,6 @@ public class TCP_Server : MonoBehaviour
 
     private void Listen()
     {
-
         while (true)
         {
             if (client == null)
@@ -100,8 +100,6 @@ public class TCP_Server : MonoBehaviour
             Thread.Sleep(sleepSeconds);
 
             SendMessage();
-
-
         }
     }
 
@@ -116,7 +114,6 @@ public class TCP_Server : MonoBehaviour
             data = new byte[1024];
 
             AddTextToConsole("Sent: " + message);
-
         }
         catch (Exception e)
         {

@@ -35,6 +35,7 @@ public class TCP_Client : MonoBehaviour
     private bool updateConsole;
     private bool clearConsole;
     private int pongNum = 0;
+
     void Start()
     {
         data = new byte[1024];
@@ -154,9 +155,7 @@ public class TCP_Client : MonoBehaviour
     public void CreateNewClient()
     {
         GameObject.Instantiate(GameObject.Find("TCP_Client"));
-      
     }
- 
 
     private void AddTextToConsole(string textToAdd)
     {
@@ -166,7 +165,6 @@ public class TCP_Client : MonoBehaviour
 
             updateConsole = true;
         }
-
     }
 
     private void ClearClientConsole()

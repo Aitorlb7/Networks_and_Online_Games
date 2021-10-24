@@ -9,7 +9,6 @@ using UnityEngine.UI;
 
 public class UDP_Client : Base_UDP
 {
-
     private string IP = "127.0.0.1";
 
     void Start()
@@ -38,11 +37,13 @@ public class UDP_Client : Base_UDP
 
     public void DisconnectAndDestroy()
     {
+        AddTextToConsole("Disconnecting Client Thread");
+        
         breakAndDisconect = true;
     }
 
     public void Reconnect()
-    {
+    {   
         if (socket == null)
         {
             AddTextToConsole("Reconnecting Client Socket");

@@ -187,7 +187,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &477450648
 GameObject:
@@ -543,7 +543,6 @@ RectTransform:
   m_Children:
   - {fileID: 1590618907}
   - {fileID: 1520014428}
-  - {fileID: 1383333960}
   m_Father: {fileID: 1315327084}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -683,7 +682,7 @@ RectTransform:
   m_Children:
   - {fileID: 1288189137}
   m_Father: {fileID: 0}
-  m_RootOrder: 4
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -718,15 +717,15 @@ RectTransform:
   m_GameObject: {fileID: 1383333959}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.03974831, y: 0.03974831, z: 0.03974831}
+  m_LocalScale: {x: 0.039748307, y: 0.039748307, z: 0.039748307}
   m_Children:
   - {fileID: 1777457331}
-  m_Father: {fileID: 1288189137}
+  m_Father: {fileID: 1590618907}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -10.668491, y: 4.4}
+  m_AnchoredPosition: {x: -10.668491, y: 3.5100002}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1383333961
@@ -1015,7 +1014,7 @@ RectTransform:
   m_Children:
   - {fileID: 1430234765}
   m_Father: {fileID: 1590618907}
-  m_RootOrder: 2
+  m_RootOrder: 3
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1302,6 +1301,7 @@ RectTransform:
   m_Children:
   - {fileID: 546466978}
   - {fileID: 840645805}
+  - {fileID: 1383333960}
   - {fileID: 1484710216}
   - {fileID: 2133547299}
   m_Father: {fileID: 1288189137}
@@ -1555,7 +1555,7 @@ RectTransform:
   m_Children:
   - {fileID: 1536225846}
   m_Father: {fileID: 1590618907}
-  m_RootOrder: 3
+  m_RootOrder: 4
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}

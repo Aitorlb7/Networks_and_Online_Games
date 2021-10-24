@@ -4,5 +4,20 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/Main Menu.unity
+    guid: 0395f30eabedf6b43adb07bb608d759f
+  - enabled: 1
+    path: Assets/Scenes/TCPClient.unity
+    guid: 47c3c37b0e790544c8d9a95123a4c8ac
+  - enabled: 1
+    path: Assets/Scenes/TCPServer.unity
+    guid: 1ce08608bfe1fb84c87fb15b3aa01337
+  - enabled: 1
+    path: Assets/Scenes/UDPClient.unity
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
+  - enabled: 1
+    path: Assets/Scenes/UDPServer.unity
+    guid: 30a4947dbad07654f9363b8b4aeba6c2
   m_configObjects: {}
