@@ -26,7 +26,7 @@ public class UDP_Server : Base_UDP
 
     protected override void Listen() 
     {
-        Debug.Log("Starting Server Thread");
+        AddTextToConsole("Starting Server Thread");
 
         base.Listen();
     }

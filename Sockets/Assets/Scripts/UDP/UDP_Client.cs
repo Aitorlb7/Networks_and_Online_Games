@@ -29,7 +29,7 @@ public class UDP_Client : Base_UDP
  
     protected override void Listen()
     {
-        Debug.Log("Starting Client Thread");
+        AddTextToConsole("Starting Client Thread");
 
         SendMessage();
 
@@ -45,7 +45,7 @@ public class UDP_Client : Base_UDP
     {
         if (socket == null)
         {
-            Debug.Log("Reconnecting Client Socket");
+            AddTextToConsole("Reconnecting Client Socket");
 
             socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             socket.Bind(ip);

@@ -37,15 +37,15 @@ public class Base_UDP : MonoBehaviour
 
     private void Update()
     {
-        if(updateConsole)
+        if(updateConsole && consoleStrings.Count > 0)
         {
             lock (lockObject)
             {
                 foreach(string message in consoleStrings)
                 {
-                    consoleText.text += message;
+                    consoleText.text += message + '\n';
 
-                    Debug.Log(consoleText.text);
+                    consoleStrings.Remove(message);
 
                 }
 
@@ -95,13 +95,11 @@ public class Base_UDP : MonoBehaviour
 
                 recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
 
-                AddTextToConsole("Recieved:" + recievedMessage);
+                AddTextToConsole("Recieved: " + recievedMessage);
 
                 Thread.Sleep(sleepSeconds);
 
                 SendMessage();
-
-                AddTextToConsole("Sent:" + message);
 
             }
         }
@@ -124,6 +122,8 @@ public class Base_UDP : MonoBehaviour
 
             data = new byte[1024];
 
+            AddTextToConsole("Sent: " + message);
+
         }
         catch (Exception e)
         {
@@ -131,7 +131,7 @@ public class Base_UDP : MonoBehaviour
             Debug.LogError(e.StackTrace);
         }
     }
-    void AddTextToConsole(string textToAdd)
+    protected void AddTextToConsole(string textToAdd)
     {
         lock(lockObject)
         {
@@ -139,8 +139,6 @@ public class Base_UDP : MonoBehaviour
 
             updateConsole = true;
         }
-
-        
 
     }
 }
