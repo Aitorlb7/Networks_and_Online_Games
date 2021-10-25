@@ -34,8 +34,12 @@ public class TCP_Server : MonoBehaviour
 
         //Max 10 users at the same time
         serverSocket.Listen(10);
-        
 
+        for (int i = 0; i < 10; i++)
+        {
+            clientList[i] = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            clientList[i].Bind(new IPEndPoint(IPAddress.Any, 11000 + i));
+        }
 
     }
 
