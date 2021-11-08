@@ -20,14 +20,10 @@ public class TCP_Server : MonoBehaviour
 
     ServerState state = ServerState.SELECTING;
 
-    Thread serverThread = null;
-    
-    private Socket serverSocket = null;
     private List<Socket> clientList = new List<Socket>();
     private List<Socket> acceptedList = new List<Socket>();
 
-    //ArrayList clientList = new ArrayList();
-    //ArrayList acceptedList = new ArrayList();
+    private int index = 0;
 
     private IPEndPoint ip;
 
@@ -44,13 +40,6 @@ public class TCP_Server : MonoBehaviour
         data = new byte[1024];
         ip = new IPEndPoint(IPAddress.Any, ownPort);
 
-        ////Initialize TCP Server
-        //serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        //serverSocket.Bind(ip);
-
-        ////Max 10 users at the same time
-        //serverSocket.Listen(10);
-
         for (int i = 0; i < 10; i++)
         {
             Socket tempSocket = null;
@@ -64,9 +53,6 @@ public class TCP_Server : MonoBehaviour
             (clientList[i]).Listen(5);
         }
 
-
-        //serverThread = new Thread(Listen);
-        //serverThread.Start();
     }
 
     
@@ -75,47 +61,24 @@ public class TCP_Server : MonoBehaviour
         switch(state)
         {
             case ServerState.SELECTING:
-                try
-                {
-                    Socket.Select(clientList, null, null, 5000);
-
-                    //Future Poll implmentation
-
-                    //for (int i = 0; i < clientList.Count; i++)
-                    //{
-                    //    if(clientList(i).Poll(500, SelectMode.SelectRead))
-                    //    {
-                    //        clientList(i).
-                    //    }
-
-                    //}
-
-
-                    state = ServerState.ACCEPTING;
-                }
-                catch (SocketException e)
-                {
-                    Debug.Log("Unable to connect to server.");
-                    Debug.Log(e.ToString());
-                }
-
-                break;
-
-            case ServerState.ACCEPTING:
-
-                if (clientList.Count == 0)
-                    break;
-
+               
                 for (int i = 0; i < clientList.Count; i++)
                 {
-                    acceptedList[i] = (clientList[i]).Accept();
+                    if (clientList[i].Poll(500, SelectMode.SelectRead))
+                    {
+                        if(acceptedList[index] == null)
+                        {
+                            acceptedList[index] = clientList[i].Accept();
 
-                    Debug.Log("Server Connected with " + (acceptedList[i]).RemoteEndPoint);
+                            Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
+
+                            index++;
+                        }
+                    }                   
                 }
-
                 state = ServerState.LISTENING;
 
-               break;
+                break;
 
             case ServerState.LISTENING:
 
