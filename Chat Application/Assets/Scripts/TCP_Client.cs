@@ -56,18 +56,21 @@ public class TCP_Client : MonoBehaviour
 
             updateChat = false;
         }
-    }
-    private void Listen()
-    {
-        if(socket.Connected)
+
+        if (socket.Connected)
         {
             SendMessage();
         }
         else
         {
             ConnectToServer();
-            SendMessage();
+            //SendMessage();
         }
+
+    }
+    private void Listen()
+    {
+       
 
         while (true)
         {

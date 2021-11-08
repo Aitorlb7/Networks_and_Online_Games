@@ -10,14 +10,24 @@ using UnityEngine.UI;
 
 public class TCP_Server : MonoBehaviour
 {
+    enum ServerState
+    {
+        SELECTING,
+        ACCEPTING,
+        LISTENING,
+        NONE
+    }
+
+    ServerState state = ServerState.SELECTING;
+
     Thread serverThread = null;
     
     private Socket serverSocket = null;
-    //private List<Socket> clientList = new List<Socket>();
-    //private List<Socket> acceptedList = new List<Socket>();
+    private List<Socket> clientList = new List<Socket>();
+    private List<Socket> acceptedList = new List<Socket>();
 
-    ArrayList clientList = new ArrayList();
-    ArrayList acceptedList = new ArrayList();
+    //ArrayList clientList = new ArrayList();
+    //ArrayList acceptedList = new ArrayList();
 
     private IPEndPoint ip;
 
@@ -41,8 +51,6 @@ public class TCP_Server : MonoBehaviour
         ////Max 10 users at the same time
         //serverSocket.Listen(10);
 
-
-
         for (int i = 0; i < 10; i++)
         {
             Socket tempSocket = null;
@@ -51,76 +59,99 @@ public class TCP_Server : MonoBehaviour
 
 
             clientList[i] = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            ((Socket)clientList[i]).Bind(new IPEndPoint(IPAddress.Any, 11000 + i));
+            (clientList[i]).Bind(new IPEndPoint(IPAddress.Any, 11000 + i));
 
-            ((Socket)clientList[i]).Listen(5);
+            (clientList[i]).Listen(5);
         }
 
 
-        serverThread = new Thread(Listen);
-        serverThread.Start();
+        //serverThread = new Thread(Listen);
+        //serverThread.Start();
     }
 
     
     void Update()
     {
-
-        try
+        switch(state)
         {
-            Socket.Select(clientList, null, null, 5000);
-        }
-        catch (SocketException e)
-        {
-            Debug.Log("Unable to connect to server.");
-            Debug.Log(e.ToString());
-        }
-
-    }
-
-    private void Listen()
-    {
-        while(true)
-        {
-
-            if (clientList.Count != 1)
-                continue;
-
-            for (int i = 0; i < clientList.Count; i++)
-            {
-                //if (((Socket)clientList[i]).RemoteEndPoint == null)
-                //    continue;
-
-                acceptedList[i] = ((Socket)clientList[i]).Accept();
-
-                Debug.Log("Server Connected with " + ((Socket)acceptedList[i]).RemoteEndPoint);
-            }
-
-            for (int i = 0; i < acceptedList.Count; i++)
-            {
-                if (acceptedList[i] == null)
-                    continue;
-
-                SocketError error;
-                recievedData = ((Socket)acceptedList[i]).Receive(data, 0, 1024, SocketFlags.None, out error);
-                Debug.Log(error.ToString());
-
-                if (recievedData == 0)
+            case ServerState.SELECTING:
+                try
                 {
-                    Debug.Log("Client " + ((Socket)acceptedList[i]).RemoteEndPoint + " Disconnected");
+                    Socket.Select(clientList, null, null, 5000);
 
-                    ((Socket)acceptedList[i]).Close();
-                    acceptedList[i] = null;
-                    continue;
+                    //Future Poll implmentation
+
+                    //for (int i = 0; i < clientList.Count; i++)
+                    //{
+                    //    if(clientList(i).Poll(500, SelectMode.SelectRead))
+                    //    {
+                    //        clientList(i).
+                    //    }
+
+                    //}
+
+
+                    state = ServerState.ACCEPTING;
+                }
+                catch (SocketException e)
+                {
+                    Debug.Log("Unable to connect to server.");
+                    Debug.Log(e.ToString());
                 }
 
-                recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+                break;
 
-                recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+            case ServerState.ACCEPTING:
 
-                Debug.Log("Recieved: " + recievedMessage);
-            }
+                if (clientList.Count == 0)
+                    break;
+
+                for (int i = 0; i < clientList.Count; i++)
+                {
+                    acceptedList[i] = (clientList[i]).Accept();
+
+                    Debug.Log("Server Connected with " + (acceptedList[i]).RemoteEndPoint);
+                }
+
+                state = ServerState.LISTENING;
+
+               break;
+
+            case ServerState.LISTENING:
+
+                for (int i = 0; i < acceptedList.Count; i++)
+                {
+                    if (acceptedList[i] == null)
+                        continue;
+
+                    recievedData = (acceptedList[i]).Receive(data);
+
+                    if (recievedData == 0)
+                    {
+                        Debug.Log("Client " + (acceptedList[i]).RemoteEndPoint + " Disconnected");
+
+                        (acceptedList[i]).Close();
+
+                        acceptedList[i] = null;
+
+                        continue;
+                    }
+
+                    recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+
+                    recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+
+                    Debug.Log("Recieved: " + recievedMessage); 
+                }
+
+                state = ServerState.SELECTING;
+
+                break;
         }
+        
+
     }
+
 
     private void SendMessage()
     {
@@ -148,7 +179,7 @@ public class TCP_Server : MonoBehaviour
 
         for (int i = 0; i < clientList.Count; i++)
         {
-            ((Socket)clientList[i]).Close();
+            (clientList[i]).Close();
             clientList[i] = null;
         }
 
@@ -157,7 +188,7 @@ public class TCP_Server : MonoBehaviour
             if (acceptedList[i] == null)
                 continue;
             
-            ((Socket)acceptedList[i]).Close();
+            (acceptedList[i]).Close();
             acceptedList[i] = null;
         }
 
