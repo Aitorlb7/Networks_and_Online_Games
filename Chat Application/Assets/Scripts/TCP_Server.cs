@@ -25,8 +25,6 @@ public class TCP_Server : MonoBehaviour
 
     private int index = 0;
 
-    private IPEndPoint ip;
-
     private byte[] data = new byte[1024];
 
     private int recievedData;
@@ -38,19 +36,17 @@ public class TCP_Server : MonoBehaviour
     void Start()
     {
         data = new byte[1024];
-        ip = new IPEndPoint(IPAddress.Any, ownPort);
-
+        Socket tempSocket = null;
         for (int i = 0; i < 10; i++)
         {
-            Socket tempSocket = null;
             clientList.Add(tempSocket);
             acceptedList.Add(tempSocket);
 
 
             clientList[i] = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            (clientList[i]).Bind(new IPEndPoint(IPAddress.Any, 11000 + i));
+            (clientList[i]).Bind(new IPEndPoint(IPAddress.Any, ownPort + i));
 
-            (clientList[i]).Listen(5);
+            (clientList[i]).Listen(2);
         }
 
     }
@@ -62,6 +58,12 @@ public class TCP_Server : MonoBehaviour
         {
             case ServerState.SELECTING:
                
+                if(index >= acceptedList.Count)
+                {
+                    Debug.Log("Server Available Connections Full");
+                    break;
+                }
+                
                 for (int i = 0; i < clientList.Count; i++)
                 {
                     if (clientList[i].Poll(500, SelectMode.SelectRead))
@@ -69,6 +71,8 @@ public class TCP_Server : MonoBehaviour
                         if(acceptedList[index] == null)
                         {
                             acceptedList[index] = clientList[i].Accept();
+
+                            SendMessage(welcomeMessage, acceptedList[index]);
 
                             Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
 
@@ -116,23 +120,23 @@ public class TCP_Server : MonoBehaviour
     }
 
 
-    private void SendMessage()
+    private void SendMessage(string message, ref Socket clientSocket)
     {
-        //try
-        //{
-        //    data = Encoding.ASCII.GetBytes(message);
+        try
+        {
+            data = Encoding.ASCII.GetBytes(message);
 
-        //    client.Send(data);
+           clientSocket.Send(data);
 
-        //    data = new byte[1024];
+            data = new byte[1024];
 
-        //    AddTextToConsole("Sent: " + message);
-        //}
-        //catch (Exception e)
-        //{
-        //    AddTextToConsole("Failed to send message");
-        //    Debug.LogError(e.StackTrace);
-        //}
+            Debug.Log("Sent: " + message + "to " + clientSocket.RemoteEndPoint);
+        }
+        catch (Exception e)
+        {
+            Debug.Log("Failed to send message");
+            Debug.LogError(e.StackTrace);
+        }
     }
 
 
