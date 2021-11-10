@@ -13,7 +13,7 @@ public class TCP_Server : MonoBehaviour
     enum ServerState
     {
         SELECTING,
-        WELCOME,
+        BROADCAST,
         LISTENING,
         NONE
     }
@@ -23,6 +23,8 @@ public class TCP_Server : MonoBehaviour
     private List<Socket> clientList = new List<Socket>();
     private List<Socket> acceptedList = new List<Socket>();
 
+    private Socket serverSocket;
+
     private int index = 0;
 
     private byte[] data = new byte[1024];
@@ -31,24 +33,26 @@ public class TCP_Server : MonoBehaviour
     private string recievedMessage;
 
     public int ownPort;
-    public string welcomeMessage;
+    public string connectionMessage;
 
     void Start()
     {
         data = new byte[1024];
         Socket tempSocket = null;
+
+        //serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        //serverSocket.Bind(new IPEndPoint(IPAddress.Any, ownPort));
+        //serverSocket.Listen(10);
+
         for (int i = 0; i < 10; i++)
         {
             clientList.Add(tempSocket);
-            acceptedList.Add(tempSocket);
-
-
             clientList[i] = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            (clientList[i]).Bind(new IPEndPoint(IPAddress.Any, ownPort + i));
-
-            (clientList[i]).Listen(2);
+            clientList[i].Bind(new IPEndPoint(IPAddress.Any, ownPort + i));
         }
 
+        //Put the fisrt socket to listen for a possible connection
+        clientList[0].Listen(1);
     }
 
     
@@ -58,44 +62,25 @@ public class TCP_Server : MonoBehaviour
         {
             case ServerState.SELECTING:
                
-                if(index >= acceptedList.Count)
-                {
-                    Debug.Log("Server Available Connections Full");
-                    break;
-                }
-                
-                for (int i = 0; i < clientList.Count; ++i)
-                {
-                    if (clientList[i].Poll(500, SelectMode.SelectRead))
-                    {
-                        if(acceptedList[index] == null)
-                        {
-                            acceptedList[index] = clientList[i].Accept();
+                //if(index >= acceptedList.Count)
+                //{
+                //    Debug.Log("Server Available Connections Full");
+                //    break;
+                //}
 
-                            welcomeMessage = acceptedList[index].RemoteEndPoint + " Joined the Chat";
+                PollAndAccept();
 
-                            Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
-
-                            clientList.RemoveAt(i);
-
-                            index++;
-
-                            state = ServerState.WELCOME;
-                        }
-                    }                   
-                }
-
-                if(state != ServerState.WELCOME) 
+                if (state != ServerState.BROADCAST) 
                     state = ServerState.LISTENING;
 
                 break;
 
-            case ServerState.WELCOME:
-
+            case ServerState.BROADCAST:
+               
                 for (int i = 0; i < acceptedList.Count; i++)
                 {
                     if (acceptedList[i] != null)
-                        SendMessage(welcomeMessage, acceptedList[i]);
+                        SendMessage(connectionMessage, acceptedList[i]);
                 }
 
                 state = ServerState.LISTENING;
@@ -104,36 +89,48 @@ public class TCP_Server : MonoBehaviour
 
             case ServerState.LISTENING:
 
-                for (int i = 0; i < acceptedList.Count; i++)
-                {
-                    if (acceptedList[i] == null)
-                        continue;
-
-                    recievedData = acceptedList[i].Receive(data);
-
-                    if (recievedData == 0)
-                    {
-                        Debug.Log("Client " + (acceptedList[i]).RemoteEndPoint + " Disconnected");
-
-                        (acceptedList[i]).Close();
-
-                        acceptedList[i] = null;
-
-                        continue;
-                    }
-
-                    recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-
-                    recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
-
-                    Debug.Log("Recieved: " + recievedMessage); 
-                }
+                RecieveMessage();
 
                 state = ServerState.SELECTING;
 
                 break;
         }
         
+
+    }
+
+    private void PollAndAccept()
+    {
+
+        //if(serverSocket.Poll(500, SelectMode.SelectRead))
+        //{
+        //    acceptedList.Add(serverSocket.Accept());
+
+        //    connectionMessage = serverSocket.RemoteEndPoint + " Joined the Chat";
+
+        //    Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
+
+        //    state = ServerState.BROADCAST;
+        //}
+
+
+        for (int i = 0; i < clientList.Count; ++i)
+        {
+            if (clientList[i].Poll(500, SelectMode.SelectRead))
+            {
+                acceptedList.Add(clientList[i].Accept());
+
+                connectionMessage = clientList[i].RemoteEndPoint + " Joined the Chat";
+
+                Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
+
+                clientList[i + 1].Listen(1);
+
+                clientList.RemoveAt(i);
+
+                state = ServerState.BROADCAST;
+            }
+        }
 
     }
 
@@ -144,7 +141,7 @@ public class TCP_Server : MonoBehaviour
         {
             data = Encoding.ASCII.GetBytes(message);
 
-           clientSocket.Send(data);
+            clientSocket.Send(data);
 
             data = new byte[1024];
 
@@ -157,6 +154,98 @@ public class TCP_Server : MonoBehaviour
         }
     }
 
+    private void RecieveMessage()
+    {
+        for (int i = 0; i < acceptedList.Count; i++)
+        {
+            recievedData = acceptedList[i].Receive(data);
+
+            if (recievedData == 0)
+            {
+                Debug.Log("Client " + (acceptedList[i]).RemoteEndPoint + " Disconnected");
+
+                acceptedList[i].Close();
+
+                acceptedList[i] = null;
+
+                connectionMessage = acceptedList[i].RemoteEndPoint + " Disconnected the Chat";
+
+                state = ServerState.BROADCAST;
+
+                continue;
+            }
+
+            recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+
+            recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+
+            Debug.Log("Recieved: " + recievedMessage);
+            
+            ProcessMessage(recievedMessage, acceptedList[i]);
+
+        }
+    }
+
+    private void ProcessMessage(string message, Socket senderClient)
+    {
+        string command = string.Empty;
+        string outputMessage = string.Empty;
+        int h;
+        for (int i = 0; i < message.Length; ++i)
+        {
+            if(message[i] == '/')
+            {
+                 h = i;
+                while(message[h] != ' ' && h < message.Length)
+                {
+                    command += message[h];
+                    message.Remove(h);
+                    h++;
+                }
+
+                //Handle Commands
+                switch (command)
+                {
+                    case "/list":
+                        for (int j = 0; j < acceptedList.Count; j++)
+                        {
+                            //Substitute remote end point for Name
+                            outputMessage += acceptedList[j].RemoteEndPoint + ",";
+                        }
+                        SendMessage(outputMessage, senderClient);
+                        break;
+                    case "/help":
+                        message = "Available commands:" + "\n"
+                            + "/list -> Show all the users connected" + "\n"
+                            + "/kick -> Kick an specific user" + "\n"
+                            + "/changeName -> Change your name" + "\n"
+                            + "/clear -> Clear your chat history";
+
+                        break;
+
+                    case "/kick":
+                        //Kick an specific user
+                        break;
+
+                    case "/changeName":
+                        //Change the sender Client name
+                        break;
+
+                    case "/clear":
+                        //clear the client chat messages
+                        break;
+
+                    default:
+                        //Iterate trough all names and send message to the reciever
+
+                        //SendMessage(message, socket)
+                        break;
+                }
+            }
+        }
+
+        
+    }
 
     private void OnDestroy()
     {
@@ -164,16 +253,13 @@ public class TCP_Server : MonoBehaviour
 
         for (int i = 0; i < clientList.Count; i++)
         {
-            (clientList[i]).Close();
+            clientList[i].Close();
             clientList[i] = null;
         }
 
         for (int i = 0; i < acceptedList.Count; i++)
         {
-            if (acceptedList[i] == null)
-                continue;
-            
-            (acceptedList[i]).Close();
+            acceptedList[i].Close();
             acceptedList[i] = null;
         }
 
