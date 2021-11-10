@@ -13,7 +13,7 @@ public class TCP_Server : MonoBehaviour
     enum ServerState
     {
         SELECTING,
-        ACCEPTING,
+        WELCOME,
         LISTENING,
         NONE
     }
@@ -64,7 +64,7 @@ public class TCP_Server : MonoBehaviour
                     break;
                 }
                 
-                for (int i = 0; i < clientList.Count; i++)
+                for (int i = 0; i < clientList.Count; ++i)
                 {
                     if (clientList[i].Poll(500, SelectMode.SelectRead))
                     {
@@ -72,14 +72,32 @@ public class TCP_Server : MonoBehaviour
                         {
                             acceptedList[index] = clientList[i].Accept();
 
-                            SendMessage(welcomeMessage, acceptedList[index]);
+                            welcomeMessage = acceptedList[index].RemoteEndPoint + " Joined the Chat";
 
                             Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
 
+                            clientList.RemoveAt(i);
+
                             index++;
+
+                            state = ServerState.WELCOME;
                         }
                     }                   
                 }
+
+                if(state != ServerState.WELCOME) 
+                    state = ServerState.LISTENING;
+
+                break;
+
+            case ServerState.WELCOME:
+
+                for (int i = 0; i < acceptedList.Count; i++)
+                {
+                    if (acceptedList[i] != null)
+                        SendMessage(welcomeMessage, acceptedList[i]);
+                }
+
                 state = ServerState.LISTENING;
 
                 break;
@@ -91,7 +109,7 @@ public class TCP_Server : MonoBehaviour
                     if (acceptedList[i] == null)
                         continue;
 
-                    recievedData = (acceptedList[i]).Receive(data);
+                    recievedData = acceptedList[i].Receive(data);
 
                     if (recievedData == 0)
                     {
@@ -120,7 +138,7 @@ public class TCP_Server : MonoBehaviour
     }
 
 
-    private void SendMessage(string message, ref Socket clientSocket)
+    private void SendMessage(string message, Socket clientSocket)
     {
         try
         {
@@ -130,7 +148,7 @@ public class TCP_Server : MonoBehaviour
 
             data = new byte[1024];
 
-            Debug.Log("Sent: " + message + "to " + clientSocket.RemoteEndPoint);
+            Debug.Log("Sent: " + message + " to " + clientSocket.RemoteEndPoint);
         }
         catch (Exception e)
         {
