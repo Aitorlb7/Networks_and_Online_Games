@@ -16,9 +16,12 @@ public class TCP_Server : MonoBehaviour
         LISTENING,
         NONE
     }
-    Thread serverThread;
+    Thread acceptThread;
+    Thread listenThread;
 
-    ServerState state = ServerState.NONE;
+    private readonly object stateLock = new object();
+
+    ServerState state = ServerState.LISTENING;
 
     private List<Socket> acceptedList = new List<Socket>();
 
@@ -43,8 +46,9 @@ public class TCP_Server : MonoBehaviour
         serverSocket.Bind(new IPEndPoint(IPAddress.Any, ownPort));
         serverSocket.Listen(10);
 
-        serverThread = new Thread(AcceptClients);
-        serverThread.Start();
+        acceptThread = new Thread(AcceptClients);
+        listenThread = new Thread(Listen);
+        acceptThread.Start();
     }
     private void AcceptClients()
     {
@@ -58,7 +62,43 @@ public class TCP_Server : MonoBehaviour
 
             Debug.Log("Server Connected with " + tempSocket.RemoteEndPoint);
 
-            state = ServerState.BROADCAST;
+            lock (stateLock) 
+                state = ServerState.BROADCAST;
+        }
+    }
+    private void Listen()
+    {
+        while(true)
+        {
+            for (int i = 0; i < acceptedList.Count; i++)
+            {
+                recievedData = acceptedList[i].Receive(data);
+
+                if (recievedData == 0)
+                {
+                    Debug.Log("Client " + (acceptedList[i]).RemoteEndPoint + " Disconnected");
+
+                    acceptedList[i].Close();
+
+                    acceptedList[i] = null;
+
+                    connectionMessage = acceptedList[i].RemoteEndPoint + " Disconnected the Chat";
+
+                    lock (stateLock)
+                        state = ServerState.BROADCAST;
+
+                    continue;
+                }
+
+                recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+
+                recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+
+                Debug.Log("Recieved: " + recievedMessage);
+
+                ProcessMessage(recievedMessage, acceptedList[i]);
+
+            }
         }
     }
     
@@ -80,28 +120,34 @@ public class TCP_Server : MonoBehaviour
 
             case ServerState.LISTENING:
 
-                RecieveMessage();
+                listenThread.Start();
+
+                state = ServerState.NONE;
 
                 break;
+
+            case ServerState.NONE:
+
+                return;
         }
         
 
     }
 
-    private void PollAndAccept()
-    {
+    //private void PollAndAccept()
+    //{
 
-        if (serverSocket.Poll(500, SelectMode.SelectRead))
-        {
-            acceptedList.Add(serverSocket.Accept());
+    //    if (serverSocket.Poll(500, SelectMode.SelectRead))
+    //    {
+    //        acceptedList.Add(serverSocket.Accept());
 
-            connectionMessage = serverSocket.RemoteEndPoint + " Joined the Chat";
+    //        connectionMessage = serverSocket.RemoteEndPoint + " Joined the Chat";
 
-            Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
+    //        Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
 
-            state = ServerState.BROADCAST;
-        }
-    }
+    //        state = ServerState.BROADCAST;
+    //    }
+    //}
 
 
     private void SendMessage(string message, Socket clientSocket)
@@ -123,37 +169,37 @@ public class TCP_Server : MonoBehaviour
         }
     }
 
-    private void RecieveMessage()
-    {
-        for (int i = 0; i < acceptedList.Count; i++)
-        {
-            recievedData = acceptedList[i].Receive(data);
+    //private void RecieveMessage()
+    //{
+    //    for (int i = 0; i < acceptedList.Count; i++)
+    //    {
+    //        recievedData = acceptedList[i].Receive(data);
 
-            if (recievedData == 0)
-            {
-                Debug.Log("Client " + (acceptedList[i]).RemoteEndPoint + " Disconnected");
+    //        if (recievedData == 0)
+    //        {
+    //            Debug.Log("Client " + (acceptedList[i]).RemoteEndPoint + " Disconnected");
 
-                acceptedList[i].Close();
+    //            acceptedList[i].Close();
 
-                acceptedList[i] = null;
+    //            acceptedList[i] = null;
 
-                connectionMessage = acceptedList[i].RemoteEndPoint + " Disconnected the Chat";
+    //            connectionMessage = acceptedList[i].RemoteEndPoint + " Disconnected the Chat";
 
-                state = ServerState.BROADCAST;
+    //            state = ServerState.BROADCAST;
 
-                continue;
-            }
+    //            continue;
+    //        }
 
-            recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+    //        recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
 
-            recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+    //        recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
 
-            Debug.Log("Recieved: " + recievedMessage);
+    //        Debug.Log("Recieved: " + recievedMessage);
             
-            ProcessMessage(recievedMessage, acceptedList[i]);
+    //        ProcessMessage(recievedMessage, acceptedList[i]);
 
-        }
-    }
+    //    }
+    //}
 
     private void ProcessMessage(string message, Socket senderClient)
     {
@@ -220,7 +266,7 @@ public class TCP_Server : MonoBehaviour
     {
         Debug.Log("Disconecting Server");
 
-        serverThread.Abort();
+        acceptThread.Abort();
 
         serverSocket.Close();
         serverSocket = null;

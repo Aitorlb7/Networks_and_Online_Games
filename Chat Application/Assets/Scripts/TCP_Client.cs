@@ -10,20 +10,31 @@ using UnityEngine.UI;
 
 public class TCP_Client : MonoBehaviour
 {
-    private Socket          socket = null;
-    private EndPoint        remoteIP;
+    //Client generator
+    //Menu for the client generator
+    //Handle recived messages
+        //-> Recieve color
+        //-> Recieve response for a specific command
+
+    //Reestructure client informartion
+    
+    
+    public Color color;
+    public string name;
+    public Socket socket = null;
+    public EndPoint remoteIp;
 
     private string          IP = "127.0.0.1";
 
     private byte[]          data = new byte[1024];
 
-    private int             recievedData;
+    private int             recievedData = 0;
     private string          recievedMessage;
 
     private bool            breakAndDisconect;
 
     public int              destPort;
-    public Text             inputText;
+    //public Text             inputText;
     public Text             chatText;
 
     private List<string>    chatMessages = new List<string>();
@@ -34,7 +45,7 @@ public class TCP_Client : MonoBehaviour
     {
         data = new byte[1024];
 
-        remoteIP = new IPEndPoint(IPAddress.Parse(IP), destPort);
+        remoteIp = new IPEndPoint(IPAddress.Parse(IP), destPort);
 
         socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
     }
@@ -57,28 +68,30 @@ public class TCP_Client : MonoBehaviour
             updateChat = false;
         }
 
-        if (socket.Connected)
-        {
-            SendMessage();
-        }
-        else
+        if (!socket.Connected)
         {
             ConnectToServer();
-            //SendMessage();
+            SendMessage(name);
+
+            return;
         }
 
-    }
-    private void Listen()
-    {
-       
-
-        while (true)
+        if(socket.Poll(500, SelectMode.SelectRead))
         {
-            recievedData = socket.ReceiveFrom(data, ref remoteIP);
+            recievedData = socket.ReceiveFrom(data, ref remoteIp);
 
-            if (breakAndDisconect)
+
+            if (recievedData == 0)
             {
-                break;
+                AddTextToConsole("Client disconnected from server");
+
+                ClearClientConsole();
+
+                socket.Close();
+
+                socket = null;
+
+                return;
             }
 
             recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
@@ -87,28 +100,57 @@ public class TCP_Client : MonoBehaviour
 
             AddTextToConsole("Recieved: " + recievedMessage);
 
-            SendMessage();
+            Debug.Log("Recieved: " + recievedMessage);
         }
 
-        AddTextToConsole("Client disconnected from server");
-
-        ClearClientConsole();
-
-        socket.Close();
-
-        socket = null;
-
-        breakAndDisconect = false;
+        
+ 
 
     }
+    //private void Listen()
+    //{
+    //    while (true)
+    //    {
+    //        recievedData = socket.ReceiveFrom(data, ref remoteIp);
 
-    private void SendMessage()
+    //        if (breakAndDisconect)
+    //        {
+    //            break;
+    //        }
+
+    //        recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+
+    //        recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+
+    //        AddTextToConsole("Recieved: " + recievedMessage);
+
+    //        //SendMessage();
+    //    }
+
+    //    AddTextToConsole("Client disconnected from server");
+
+    //    ClearClientConsole();
+
+    //    socket.Close();
+
+    //    socket = null;
+
+    //    breakAndDisconect = false;
+
+    //}
+
+    //public void RecieveInput(string messageInput)
+    //{
+    //    SendMessage(messageInput);
+    //}
+
+    private void SendMessage(string message)
     {
         try
         {
-            data = Encoding.ASCII.GetBytes(/*message*/ inputText.text);
+            data = Encoding.ASCII.GetBytes(message);
 
-            socket.SendTo(data, remoteIP);
+            socket.SendTo(data, remoteIp);
 
             data = new byte[1024];
 
@@ -125,7 +167,7 @@ public class TCP_Client : MonoBehaviour
     {
         try
         {
-            socket.Connect(remoteIP);
+            socket.Connect(remoteIp);
             AddTextToConsole("Connected with Server!");
 
         }
