@@ -12,15 +12,14 @@ public class TCP_Server : MonoBehaviour
 {
     enum ServerState
     {
-        SELECTING,
         BROADCAST,
         LISTENING,
         NONE
     }
+    Thread serverThread;
 
-    ServerState state = ServerState.SELECTING;
+    ServerState state = ServerState.NONE;
 
-    private List<Socket> clientList = new List<Socket>();
     private List<Socket> acceptedList = new List<Socket>();
 
     private Socket serverSocket;
@@ -38,44 +37,36 @@ public class TCP_Server : MonoBehaviour
     void Start()
     {
         data = new byte[1024];
-        Socket tempSocket = null;
+        
 
-        //serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        //serverSocket.Bind(new IPEndPoint(IPAddress.Any, ownPort));
-        //serverSocket.Listen(10);
+        serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        serverSocket.Bind(new IPEndPoint(IPAddress.Any, ownPort));
+        serverSocket.Listen(10);
 
-        for (int i = 0; i < 10; i++)
-        {
-            clientList.Add(tempSocket);
-            clientList[i] = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            clientList[i].Bind(new IPEndPoint(IPAddress.Any, ownPort + i));
-        }
-
-        //Put the fisrt socket to listen for a possible connection
-        clientList[0].Listen(1);
+        serverThread = new Thread(AcceptClients);
+        serverThread.Start();
     }
+    private void AcceptClients()
+    {
+        while(true)
+        {
+            Socket tempSocket = serverSocket.Accept();
 
+            acceptedList.Add(tempSocket);
+
+            connectionMessage = tempSocket.RemoteEndPoint + " Joined the Chat";
+
+            Debug.Log("Server Connected with " + tempSocket.RemoteEndPoint);
+
+            state = ServerState.BROADCAST;
+        }
+    }
     
     void Update()
     {
         switch(state)
         {
-            case ServerState.SELECTING:
-               
-                //if(index >= acceptedList.Count)
-                //{
-                //    Debug.Log("Server Available Connections Full");
-                //    break;
-                //}
-
-                PollAndAccept();
-
-                if (state != ServerState.BROADCAST) 
-                    state = ServerState.LISTENING;
-
-                break;
-
-            case ServerState.BROADCAST:
+              case ServerState.BROADCAST:
                
                 for (int i = 0; i < acceptedList.Count; i++)
                 {
@@ -91,8 +82,6 @@ public class TCP_Server : MonoBehaviour
 
                 RecieveMessage();
 
-                state = ServerState.SELECTING;
-
                 break;
         }
         
@@ -102,36 +91,16 @@ public class TCP_Server : MonoBehaviour
     private void PollAndAccept()
     {
 
-        //if(serverSocket.Poll(500, SelectMode.SelectRead))
-        //{
-        //    acceptedList.Add(serverSocket.Accept());
-
-        //    connectionMessage = serverSocket.RemoteEndPoint + " Joined the Chat";
-
-        //    Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
-
-        //    state = ServerState.BROADCAST;
-        //}
-
-
-        for (int i = 0; i < clientList.Count; ++i)
+        if (serverSocket.Poll(500, SelectMode.SelectRead))
         {
-            if (clientList[i].Poll(500, SelectMode.SelectRead))
-            {
-                acceptedList.Add(clientList[i].Accept());
+            acceptedList.Add(serverSocket.Accept());
 
-                connectionMessage = clientList[i].RemoteEndPoint + " Joined the Chat";
+            connectionMessage = serverSocket.RemoteEndPoint + " Joined the Chat";
 
-                Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
+            Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
 
-                clientList[i + 1].Listen(1);
-
-                clientList.RemoveAt(i);
-
-                state = ServerState.BROADCAST;
-            }
+            state = ServerState.BROADCAST;
         }
-
     }
 
 
@@ -251,11 +220,10 @@ public class TCP_Server : MonoBehaviour
     {
         Debug.Log("Disconecting Server");
 
-        for (int i = 0; i < clientList.Count; i++)
-        {
-            clientList[i].Close();
-            clientList[i] = null;
-        }
+        serverThread.Abort();
+
+        serverSocket.Close();
+        serverSocket = null;
 
         for (int i = 0; i < acceptedList.Count; i++)
         {
