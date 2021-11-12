@@ -10,48 +10,47 @@ using UnityEngine.UI;
 
 public class TCP_Client : MonoBehaviour
 {
-    //Client generator
-    //Menu for the client generator
-    //Handle recived messages
-        //-> Recieve color
-        //-> Recieve response for a specific command
+    //Client generator                                      --> Should work. Ask what do the client need upon generation.
 
-    //Reestructure client informartion
+    //Menu for the client generator                         --> Mock-up done. Lacks functionality and end result.
+
+    //Handle recived messages                               --> Filter all incoming messages and check for server actions, etc.
+        //-> Recieve color                                  --> Have a tag for server messages ([COLOR: 0.5f, 0.5f, 0.5f])
+        //-> Recieve response for a specific command        --> The only "tricky" thing is to make sure only the requesting client receives the message.
+
+    //Re-structure client information
     
-    
-    public Color color;
-    public string name;
-    public Socket socket = null;
-    public EndPoint remoteIp;
-
-    private string          IP = "127.0.0.1";
-
-    private byte[]          data = new byte[1024];
-
-    private int             recievedData = 0;
-    private string          recievedMessage;
-
-    private bool            breakAndDisconect;
-
+    public Color            color;
+    public string           name;
     public int              destPort;
-    //public Text             inputText;
     public Text             chatText;
+    public Socket           socket = null;
+    public EndPoint         remoteIp;
 
-    private List<string>    chatMessages = new List<string>();
-    private bool            updateChat;
-    private bool            clearChat;
+    private string          IP                  = "127.0.0.1";                                              // --- Connection Variables
+    private bool            breakAndDisconect   = false;                                                    // ------------------------
+    
+    private byte[]          data                = new byte[1024];                                           // --------------
+    private int             receivedData        = 0;                                                        // Data Variables
+    private string          receivedMessage     = "";                                                       // --------------
+    
+    private List<string>    chatMessages        = new List<string>();                                       // --------------
+    private bool            updateChat          = false;                                                    // Chat Variables
+    private bool            clearChat           = false;                                                    //---------------
 
     void Start()
     {
-        data = new byte[1024];
-
-        remoteIp = new IPEndPoint(IPAddress.Parse(IP), destPort);
-
-        socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        data        = new byte[1024];
+        remoteIp    = new IPEndPoint(IPAddress.Parse(IP), destPort);
+        socket      = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
     }
 
     void Update()
     {
+        //StablishConnectionWithServer();
+        //UpdateChat();
+        //CheckForNewMessages();
+
         if (updateChat)
         {
             if (clearChat)
@@ -61,10 +60,11 @@ public class TCP_Client : MonoBehaviour
             }
 
             foreach (string message in chatMessages)
+            {
                 chatText.text += message + '\n';
+            }
 
             chatMessages.Clear();
-
             updateChat = false;
         }
 
@@ -78,78 +78,49 @@ public class TCP_Client : MonoBehaviour
 
         if(socket.Poll(500, SelectMode.SelectRead))
         {
-            recievedData = socket.ReceiveFrom(data, ref remoteIp);
+            receivedData = socket.ReceiveFrom(data, ref remoteIp);
 
-
-            if (recievedData == 0)
+            if (receivedData == 0)
             {
                 AddTextToConsole("Client disconnected from server");
-
                 ClearClientConsole();
 
                 socket.Close();
-
                 socket = null;
 
                 return;
             }
 
-            recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+            receivedMessage = Encoding.ASCII.GetString(data, 0, receivedData);
+            receivedMessage.Trim('\0');                                                                     //Trim all zeros from the string and save space
 
-            recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+            //Check for server actions
+            /*if (receivedMessage[0] == '[')
+            {
+                string tag = string.Empty;
+                int i = 0;
+                while(receivedMessage[i] != ']' && i < receivedMessage.Length)
+                {
+                    // Get Server Message Tag
+                }
 
-            AddTextToConsole("Recieved: " + recievedMessage);
+                switch(tag)
+                {
+                    //case "COLOR": { ChangeClientColor(); } break;
+                }
+            }*/
 
-            Debug.Log("Recieved: " + recievedMessage);
+            AddTextToConsole("Recieved: " + receivedMessage);
+
+            Debug.Log("Recieved: " + receivedMessage);
         }
-
-        
- 
-
     }
-    //private void Listen()
-    //{
-    //    while (true)
-    //    {
-    //        recievedData = socket.ReceiveFrom(data, ref remoteIp);
-
-    //        if (breakAndDisconect)
-    //        {
-    //            break;
-    //        }
-
-    //        recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-
-    //        recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
-
-    //        AddTextToConsole("Recieved: " + recievedMessage);
-
-    //        //SendMessage();
-    //    }
-
-    //    AddTextToConsole("Client disconnected from server");
-
-    //    ClearClientConsole();
-
-    //    socket.Close();
-
-    //    socket = null;
-
-    //    breakAndDisconect = false;
-
-    //}
-
-    //public void RecieveInput(string messageInput)
-    //{
-    //    SendMessage(messageInput);
-    //}
 
     private void SendMessage(string message)
     {
         try
         {
             data = Encoding.ASCII.GetBytes(message);
-
             socket.SendTo(data, remoteIp);
 
             data = new byte[1024];
@@ -169,7 +140,6 @@ public class TCP_Client : MonoBehaviour
         {
             socket.Connect(remoteIp);
             AddTextToConsole("Connected with Server!");
-
         }
         catch (SocketException e)
         {
@@ -178,15 +148,9 @@ public class TCP_Client : MonoBehaviour
         }
     }
 
-    //public void CreateNewClient()
-    //{
-    //    GameObject.Instantiate(GameObject.Find("TCP_Client"));
-    //}
-
     private void AddTextToConsole(string textToAdd)
     {
         chatMessages.Add(textToAdd);
-
         updateChat = true;
     }
 
@@ -213,3 +177,31 @@ public class TCP_Client : MonoBehaviour
         }
     }
 }
+
+//private void Listen()
+//{
+//    while (true)
+//    {
+//        receivedData = socket.ReceiveFrom(data, ref remoteIp);
+//        if (breakAndDisconect)
+//        {
+//            break;
+//        }
+//
+//        receivedMessage = Encoding.ASCII.GetString(data, 0, receivedData);
+//        receivedMessage.Trim('\0'); //Trim all zeros from the string and save space
+//        AddTextToConsole("Recieved: " + receivedMessage);
+//        //SendMessage();
+//    }
+//
+//    AddTextToConsole("Client disconnected from server");
+//    ClearClientConsole();
+//    socket.Close();
+//    socket = null;
+//    breakAndDisconect = false;
+//}
+
+//public void RecieveInput(string messageInput)
+//{
+//    SendMessage(messageInput);
+//}

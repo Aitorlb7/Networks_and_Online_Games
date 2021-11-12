@@ -16,21 +16,19 @@ public class TCP_Server : MonoBehaviour
         LISTENING,
         NONE
     }
+    
     Thread acceptThread;
     Thread listenThread;
 
     private readonly object stateLock = new object();
-
     ServerState state = ServerState.LISTENING;
 
     private List<Socket> acceptedList = new List<Socket>();
-
     private Socket serverSocket;
 
     private int index = 0;
 
     private byte[] data = new byte[1024];
-
     private int recievedData;
     private string recievedMessage;
 
@@ -41,7 +39,6 @@ public class TCP_Server : MonoBehaviour
     {
         data = new byte[1024];
         
-
         serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         serverSocket.Bind(new IPEndPoint(IPAddress.Any, ownPort));
         serverSocket.Listen(10);
@@ -134,22 +131,6 @@ public class TCP_Server : MonoBehaviour
 
     }
 
-    //private void PollAndAccept()
-    //{
-
-    //    if (serverSocket.Poll(500, SelectMode.SelectRead))
-    //    {
-    //        acceptedList.Add(serverSocket.Accept());
-
-    //        connectionMessage = serverSocket.RemoteEndPoint + " Joined the Chat";
-
-    //        Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
-
-    //        state = ServerState.BROADCAST;
-    //    }
-    //}
-
-
     private void SendMessage(string message, Socket clientSocket)
     {
         try
@@ -169,48 +150,16 @@ public class TCP_Server : MonoBehaviour
         }
     }
 
-    //private void RecieveMessage()
-    //{
-    //    for (int i = 0; i < acceptedList.Count; i++)
-    //    {
-    //        recievedData = acceptedList[i].Receive(data);
-
-    //        if (recievedData == 0)
-    //        {
-    //            Debug.Log("Client " + (acceptedList[i]).RemoteEndPoint + " Disconnected");
-
-    //            acceptedList[i].Close();
-
-    //            acceptedList[i] = null;
-
-    //            connectionMessage = acceptedList[i].RemoteEndPoint + " Disconnected the Chat";
-
-    //            state = ServerState.BROADCAST;
-
-    //            continue;
-    //        }
-
-    //        recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-
-    //        recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
-
-    //        Debug.Log("Recieved: " + recievedMessage);
-            
-    //        ProcessMessage(recievedMessage, acceptedList[i]);
-
-    //    }
-    //}
-
     private void ProcessMessage(string message, Socket senderClient)
     {
         string command = string.Empty;
         string outputMessage = string.Empty;
         int h;
         for (int i = 0; i < message.Length; ++i)
-        {
+        {            
             if(message[i] == '/')
             {
-                 h = i;
+                h = i;
                 while(message[h] != ' ' && h < message.Length)
                 {
                     command += message[h];
@@ -221,45 +170,90 @@ public class TCP_Server : MonoBehaviour
                 //Handle Commands
                 switch (command)
                 {
-                    case "/list":
-                        for (int j = 0; j < acceptedList.Count; j++)
-                        {
-                            //Substitute remote end point for Name
-                            outputMessage += acceptedList[j].RemoteEndPoint + ",";
-                        }
-                        SendMessage(outputMessage, senderClient);
-                        break;
-                    case "/help":
-                        message = "Available commands:" + "\n"
-                            + "/list -> Show all the users connected" + "\n"
-                            + "/kick -> Kick an specific user" + "\n"
-                            + "/changeName -> Change your name" + "\n"
-                            + "/clear -> Clear your chat history";
-
-                        break;
-
-                    case "/kick":
-                        //Kick an specific user
-                        break;
-
-                    case "/changeName":
-                        //Change the sender Client name
-                        break;
-
-                    case "/clear":
-                        //clear the client chat messages
-                        break;
-
-                    default:
-                        //Iterate trough all names and send message to the reciever
-
-                        //SendMessage(message, socket)
-                        break;
+                    case "/list":       { ListCommand(senderClient); }  break;
+                    case "/help":       { HelpCommand(senderClient); }  break;
+                    case "/kick":       { KickCommand(); }              break;
+                    case "/changename": { ChangeNameCommand(); }        break;
+                    case "/clear":      { ClearCommand(); }             break;
+                    default:            { DefaultCommand(); }           break;
                 }
             }
         }
 
+        // Maybe commands should only be allowed at the beginning of the string.
+        /*string command = string.Empty;
+        if (message[0] == '/')
+        {
+            int h = 0;
+            while((message[h] != ' ' || message[h] != '\0') && h < message.Length)
+            {
+                command += message[h];
+                message.Remove(h); // ???
+                h++;
+            }
+
+            switch (command)
+            {
+                case "/list":       { ListCommand(); }          break;
+                case "/help":       { HelpCommand(); }          break;
+                case "/kick":       { KickCommand(); }          break;
+                case "/changename": { ChangeNameCommand(); }    break;
+                case "/clear":      { ClearCommand(); }         break;
+                default:            { DefaultCommand(); }       break;
+            }
+        }*/
+    }
+
+    private void ListCommand(Socket senderClient)
+    {
+        string listMessage = string.Empty;
         
+        for (int j = 0; j < acceptedList.Count; j++)
+        {
+            //Substitute remote end point for Name
+            listMessage += acceptedList[j].RemoteEndPoint + ", ";
+        }
+
+        SendMessage(listMessage, senderClient);
+    }
+
+    private void HelpCommand(Socket senderClient)
+    {
+        string helpMessage = "Available commands:\n"
+                            + "/list -> Show all the users connected\n"
+                            + "/kick -> Kick an specific user\n"
+                            + "/changeName -> Change your name\n"
+                            + "/clear -> Clear your chat history\n";
+
+        SendMessage(helpMessage, senderClient);
+    }
+
+    private void KickCommand()
+    {
+        //Kick an specific user
+        //Check all connected clients and look for a name match.
+        //Terminate the connection with that client.
+
+        //string kickMessage = "You have been kicked from the server!";
+        //SendMessage(kickMessage, kickedClient);
+        //kickedClient.Close();
+    }
+
+    private void ChangeNameCommand()
+    {
+        //Change the client's name.
+    }
+
+    private void ClearCommand()
+    {
+        //Clear the client's chat messages
+    }
+
+    private void DefaultCommand()
+    {
+        //Iterate trough all names and send message to the reciever
+
+        //SendMessage(message, socket)
     }
 
     private void OnDestroy()
@@ -279,3 +273,40 @@ public class TCP_Server : MonoBehaviour
 
     }
 }
+
+//private void PollAndAccept()
+//{
+//    if (serverSocket.Poll(500, SelectMode.SelectRead))
+//    {
+//        acceptedList.Add(serverSocket.Accept());
+//        connectionMessage = serverSocket.RemoteEndPoint + " Joined the Chat";
+//        state = ServerState.BROADCAST;
+//        
+//        Debug.Log("Server Connected with " + acceptedList[index].RemoteEndPoint);
+//    }
+//}
+
+//private void RecieveMessage()
+//{
+//    for (int i = 0; i < acceptedList.Count; i++)
+//    {
+//        recievedData = acceptedList[i].Receive(data);
+//        if (recievedData == 0)
+//        {
+//            Debug.Log("Client " + (acceptedList[i]).RemoteEndPoint + " Disconnected");
+//            
+//            acceptedList[i].Close();
+//            acceptedList[i] = null;
+//            connectionMessage = acceptedList[i].RemoteEndPoint + " Disconnected the Chat";
+//            state = ServerState.BROADCAST;
+//
+//            continue;
+//        }
+//
+//        recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+//        recievedMessage.Trim('\0'); //Trim all zeros from the string and save space
+//        Debug.Log("Recieved: " + recievedMessage);
+//        
+//        ProcessMessage(recievedMessage, acceptedList[i]);
+//    }
+//}
