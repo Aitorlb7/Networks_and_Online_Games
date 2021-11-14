@@ -10,15 +10,15 @@ using UnityEngine.UI;
 
 public class TCP_Client : MonoBehaviour
 {
-    //Client generator                                      --> Should work. Ask what do the client need upon generation.
+    //Client generator                                      --> Done. Revise that the generated parameters are correct.
 
-    //Menu for the client generator                         --> Mock-up done. Lacks functionality and end result.
+    //Menu for the client generator                         --> Done. Requires testing.
 
     //Handle recived messages                               --> Filter all incoming messages and check for server actions, etc.
         //-> Recieve color                                  --> Have a tag for server messages ([COLOR: 0.5f, 0.5f, 0.5f])
         //-> Recieve response for a specific command        --> The only "tricky" thing is to make sure only the requesting client receives the message.
 
-    //Re-structure client information
+    //Re-structure client information                       --> Is it really needed tho? For a 5% delivery?
     
     public Color            color;
     public string           name;
@@ -94,25 +94,46 @@ public class TCP_Client : MonoBehaviour
             receivedMessage = Encoding.ASCII.GetString(data, 0, receivedData);
             receivedMessage.Trim('\0');                                                                     //Trim all zeros from the string and save space
 
+            //CheckServerActions(receivedMessage);
+            
             //Check for server actions
-            /*if (receivedMessage[0] == '[')
+            if (receivedMessage[0] == '[')                                                                  // This is for format [TAG:value]
             {
-                string tag = string.Empty;
+                /*string tag = string.Empty;
+                string value = string.Empty;
                 int i = 0;
                 while(receivedMessage[i] != ']' && i < receivedMessage.Length)
                 {
                     // Get Server Message Tag
+                    while(receivedMessage[i] != ':' && i < receivedMessage.Length)
+                    {
+                        tag += receivedMessage[i];
+                        receivedMessage.Remove(i);
+                        ++i;
+                    }
+
+                    i = 0;
+                    while(receivedMessage[i] != ']' && i < receivedMessage.Length)
+                    {
+                        value += receivedMessage[i];
+                        receivedMessage.Remove(i);
+                        ++i;
+                    }
                 }
 
                 switch(tag)
                 {
-                    //case "COLOR": { ChangeClientColor(); } break;
-                }
-            }*/
-
-            AddTextToConsole("Recieved: " + receivedMessage);
+                    //case "COLOR":   { ChangeClientColor(value); }    break;
+                    //case "NAME":    { ChangeClientName(value);}      break;
+                }*/
+            }
+            else
+            {
+                AddTextToConsole("Recieved: " + receivedMessage);
+            }
 
             Debug.Log("Recieved: " + receivedMessage);
+
         }
     }
 

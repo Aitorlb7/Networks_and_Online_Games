@@ -732,23 +732,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4015687653871070692, guid: 535b009c082da2347986ef12cd0c34e5, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 5
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4015687653871070692, guid: 535b009c082da2347986ef12cd0c34e5, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 11500000, guid: 84a0f0999aeadc444b39c8e2e3144f10, type: 3}
+      objectReference: {fileID: 898912384}
     - target: {fileID: 4015687653871070692, guid: 535b009c082da2347986ef12cd0c34e5, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 4015687653871070692, guid: 535b009c082da2347986ef12cd0c34e5, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: 
+      value: GenerateClient
       objectReference: {fileID: 0}
     - target: {fileID: 4015687653871070692, guid: 535b009c082da2347986ef12cd0c34e5, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
+      value: Client_Generator, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 4015687653871070692, guid: 535b009c082da2347986ef12cd0c34e5, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
@@ -972,7 +972,7 @@ MonoBehaviour:
   color: {r: 0, g: 0, b: 0, a: 0}
   name: 
   destPort: 7777
-  chatText: {fileID: 0}
+  chatText: {fileID: 1960270237}
 --- !u!4 &1984339318
 Transform:
   m_ObjectHideFlags: 0
@@ -996,7 +996,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1611017942793039824, guid: 34b2a610b97a1f8458184d50a0c77ec7, type: 3}
       propertyPath: m_Name
-      value: Continue
+      value: Title
       objectReference: {fileID: 0}
     - target: {fileID: 1611017942793039825, guid: 34b2a610b97a1f8458184d50a0c77ec7, type: 3}
       propertyPath: m_Pivot.x
@@ -1093,7 +1093,7 @@ PrefabInstance:
     - target: {fileID: 1611017942793039827, guid: 34b2a610b97a1f8458184d50a0c77ec7, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 6268964d3d853d14e9bb39a2755e4c4f, type: 3}
+      objectReference: {fileID: 21300000, guid: 41b5cc2859543134ab246714e3d9114f, type: 3}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 34b2a610b97a1f8458184d50a0c77ec7, type: 3}
 --- !u!224 &2072849307 stripped

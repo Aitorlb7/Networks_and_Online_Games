@@ -7,9 +7,14 @@ using System.Text;
 using System.Threading;
 using UnityEngine;
 using UnityEngine.UI;
+using Random = UnityEngine.Random;
 
 public class TCP_Server : MonoBehaviour
 {
+    // Use GetRandomColor() to generate a random color. Who would have thought it did that right?
+    // client.color = GetRandomColor() or something like that.
+    // Changed the switch for the commands. Check it out.
+    
     enum ServerState
     {
         BROADCAST,
@@ -26,7 +31,7 @@ public class TCP_Server : MonoBehaviour
     private List<Socket> acceptedList = new List<Socket>();
     private Socket serverSocket;
 
-    private int index = 0;
+    private int index = 0;                                                                                          // Never used?
 
     private byte[] data = new byte[1024];
     private int recievedData;
@@ -242,18 +247,68 @@ public class TCP_Server : MonoBehaviour
     private void ChangeNameCommand()
     {
         //Change the client's name.
+        //Returned message should be [NAME: newName];
     }
 
     private void ClearCommand()
     {
         //Clear the client's chat messages
+        //Is it really necessary to have it go to the server to clear local messages?
     }
 
     private void DefaultCommand()
     {
         //Iterate trough all names and send message to the reciever
+        //Or just do nothing and send a Log to check why it reached this place.
 
         //SendMessage(message, socket)
+    }
+
+    private Color GetRandomColor()
+    {
+        return new Color(Random.Range(0.0f, 1.0f), Random.Range(0.0f, 1.0f), Random.Range(0.0f, 1.0f));
+    }
+
+    private Color GetRandomBaseColor()
+    {
+        int i = Random.Range(0, 8);
+        Color newColor = new Color();
+
+        switch (i)
+        {
+            case 0: { newColor = Color.black; }     break;
+            case 1: { newColor = Color.blue; }      break;
+            case 2: { newColor = Color.cyan; }      break;
+            case 3: { newColor = Color.green; }     break;
+            case 4: { newColor = Color.grey; }      break;
+            case 5: { newColor = Color.magenta; }   break;
+            case 6: { newColor = Color.red; }       break;
+            case 7: { newColor = Color.white; }     break;
+            case 8: { newColor = Color.yellow; }    break;
+        }
+
+        return newColor;
+    }
+
+    private string GetRandomBaseColorAsString()
+    {
+        int i = Random.Range(0, 8);
+        string colorName = "black";
+
+        switch (i)
+        {
+            case 0: { colorName = "black"; }     break;
+            case 1: { colorName = "blue"; }      break;
+            case 2: { colorName = "cyan"; }      break;
+            case 3: { colorName = "green"; }     break;
+            case 4: { colorName = "grey"; }      break;
+            case 5: { colorName = "magenta"; }   break;
+            case 6: { colorName = "red";}        break;
+            case 7: { colorName = "yellow"; }    break;
+            case 8: { colorName = "white"; }     break;
+        }
+
+        return colorName;
     }
 
     private void OnDestroy()
