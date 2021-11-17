@@ -22,13 +22,13 @@ public class TCP_Client : MonoBehaviour
     
     public Color            color;
     public string           name;
+    public Text             textName;
     public int              destPort;
     public Text             chatText;
     public Socket           socket = null;
     public EndPoint         remoteIp;
 
     private string          IP                  = "127.0.0.1";                                              // --- Connection Variables
-    private bool            breakAndDisconect   = false;                                                    // ------------------------
     
     private byte[]          data                = new byte[1024];                                           // --------------
     private int             receivedData        = 0;                                                        // Data Variables
@@ -43,13 +43,11 @@ public class TCP_Client : MonoBehaviour
         data        = new byte[1024];
         remoteIp    = new IPEndPoint(IPAddress.Parse(IP), destPort);
         socket      = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        name = textName.text;
     }
 
     void Update()
     {
-        //StablishConnectionWithServer();
-        //UpdateChat();
-        //CheckForNewMessages();
 
         if (updateChat)
         {
@@ -82,7 +80,7 @@ public class TCP_Client : MonoBehaviour
 
             if (receivedData == 0)
             {
-                AddTextToConsole("Client disconnected from server");
+                AddTextToConsole("Disconnecting");
                 ClearClientConsole();
 
                 socket.Close();
@@ -92,52 +90,13 @@ public class TCP_Client : MonoBehaviour
             }
 
             receivedMessage = Encoding.ASCII.GetString(data, 0, receivedData);
-            receivedMessage.Trim('\0');                                                                     //Trim all zeros from the string and save space
 
-            //CheckServerActions(receivedMessage);
-            
-            //Check for server actions
-            if (receivedMessage[0] == '[')                                                                  // This is for format [TAG:value]
-            {
-                /*string tag = string.Empty;
-                string value = string.Empty;
-                int i = 0;
-                while(receivedMessage[i] != ']' && i < receivedMessage.Length)
-                {
-                    // Get Server Message Tag
-                    while(receivedMessage[i] != ':' && i < receivedMessage.Length)
-                    {
-                        tag += receivedMessage[i];
-                        receivedMessage.Remove(i);
-                        ++i;
-                    }
-
-                    i = 0;
-                    while(receivedMessage[i] != ']' && i < receivedMessage.Length)
-                    {
-                        value += receivedMessage[i];
-                        receivedMessage.Remove(i);
-                        ++i;
-                    }
-                }
-
-                switch(tag)
-                {
-                    //case "COLOR":   { ChangeClientColor(value); }    break;
-                    //case "NAME":    { ChangeClientName(value);}      break;
-                }*/
-            }
-            else
-            {
-                AddTextToConsole("Recieved: " + receivedMessage);
-            }
-
-            Debug.Log("Recieved: " + receivedMessage);
+            ProcessMessage(receivedMessage);
 
         }
     }
 
-    private void SendMessage(string message)
+    public void SendMessage(string message)
     {
         try
         {
@@ -153,6 +112,47 @@ public class TCP_Client : MonoBehaviour
             AddTextToConsole("Failed to send message");
             Debug.LogError(e.StackTrace);
         }
+    }
+
+    private void ProcessMessage(string message)
+    {
+        //Check for server actions
+        if (message[0] == '[')                                                                  // This is for format [TAG:value]
+        {
+            string tag = string.Empty;
+            string value = string.Empty;
+            int i = 0;
+            while (message[i] != ']' && i < message.Length)
+            {
+                // Get Server Message Tag
+                while (message[i] != ':' && i < message.Length)
+                {
+                    tag += message[i];
+                    message.Remove(i);
+                    ++i;
+                }
+
+                i = 0;
+                while (message[i] != ']' && i < message.Length)
+                {
+                    value += message[i];
+                    message.Remove(i);
+                    ++i;
+                }
+            }
+
+            switch (tag)
+            {
+                //case "COLOR":   { ChangeClientColor(value); }    break;
+                case "NAME":    { name = value; textName.text = value; AddTextToConsole("Name changed to: " + value); }      break;
+            }
+        }
+        else
+        {
+            AddTextToConsole( message);
+        }
+
+        Debug.Log( message);
     }
 
     public void ConnectToServer()
@@ -182,11 +182,6 @@ public class TCP_Client : MonoBehaviour
         updateChat = true;
     }
 
-    public void DisconnectAndDestroy()
-    {
-        breakAndDisconect = true;
-    }
-
     private void OnDestroy()
     {
         Debug.Log("Disconecting Client Socket");
@@ -197,32 +192,6 @@ public class TCP_Client : MonoBehaviour
             socket = null;
         }
     }
+
 }
 
-//private void Listen()
-//{
-//    while (true)
-//    {
-//        receivedData = socket.ReceiveFrom(data, ref remoteIp);
-//        if (breakAndDisconect)
-//        {
-//            break;
-//        }
-//
-//        receivedMessage = Encoding.ASCII.GetString(data, 0, receivedData);
-//        receivedMessage.Trim('\0'); //Trim all zeros from the string and save space
-//        AddTextToConsole("Recieved: " + receivedMessage);
-//        //SendMessage();
-//    }
-//
-//    AddTextToConsole("Client disconnected from server");
-//    ClearClientConsole();
-//    socket.Close();
-//    socket = null;
-//    breakAndDisconect = false;
-//}
-
-//public void RecieveInput(string messageInput)
-//{
-//    SendMessage(messageInput);
-//}

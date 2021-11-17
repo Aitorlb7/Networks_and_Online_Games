@@ -2,21 +2,12 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class Client_Generator : MonoBehaviour
 {
     public GameObject   clientExample;
     public Text         clientName;
-
-    void Start()
-    {
-
-    }
-
-    void Update()
-    {
-        
-    }
 
     public void GenerateClient()
     {
@@ -32,7 +23,11 @@ public class Client_Generator : MonoBehaviour
         clientScript.name = (InvalidClientName()) ? ("User" + Random.Range(0, 999999)) : clientName.text;
 
         clientName.text = "Enter Client Name";
-        newClient.SetActive(true);   
+        newClient.SetActive(true);
+
+
+        SceneManager.LoadScene("User", LoadSceneMode.Additive);
+
     }
 
     private bool InvalidClientName()
