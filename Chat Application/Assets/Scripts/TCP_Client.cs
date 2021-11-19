@@ -21,7 +21,7 @@ public class TCP_Client : MonoBehaviour
     //Re-structure client information                       --> Is it really needed tho? For a 5% delivery?
     
     public Color            color;
-    public string           name;
+    public Text             name;
     public Text             textName;
     public int              destPort;
     public Text             chatText;
@@ -38,16 +38,20 @@ public class TCP_Client : MonoBehaviour
     private bool            updateChat          = false;                                                    // Chat Variables
     private bool            clearChat           = false;                                                    //---------------
 
+    private bool            kickedFromChat      = false;
+
     void Start()
     {
         data        = new byte[1024];
         remoteIp    = new IPEndPoint(IPAddress.Parse(IP), destPort);
         socket      = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-        name = textName.text;
+        name.text = textName.text;
     }
 
     void Update()
     {
+        if (kickedFromChat)
+            Application.Quit();
 
         if (updateChat)
         {
@@ -69,12 +73,36 @@ public class TCP_Client : MonoBehaviour
         if (!socket.Connected)
         {
             ConnectToServer();
-            SendMessage(name);
+            SendMessage(name.text);
 
             return;
         }
 
-        if(socket.Poll(500, SelectMode.SelectRead))
+        Listen();
+
+    }
+
+    public void SendMessage(string message)
+    {
+        try
+        {
+            data = Encoding.ASCII.GetBytes(message);
+            socket.SendTo(data, remoteIp);
+
+            data = new byte[1024];
+
+            //AddTextToConsole("Sent: " + message);
+        }
+        catch (Exception e)
+        {
+            AddTextToConsole("Failed to send message");
+            Debug.LogError(e.StackTrace);
+        }
+    }
+
+    private void Listen()
+    {
+        if (socket.Poll(500, SelectMode.SelectRead))
         {
             receivedData = socket.ReceiveFrom(data, ref remoteIp);
 
@@ -96,24 +124,6 @@ public class TCP_Client : MonoBehaviour
         }
     }
 
-    public void SendMessage(string message)
-    {
-        try
-        {
-            data = Encoding.ASCII.GetBytes(message);
-            socket.SendTo(data, remoteIp);
-
-            data = new byte[1024];
-
-            //AddTextToConsole("Sent: " + message);
-        }
-        catch (Exception e)
-        {
-            AddTextToConsole("Failed to send message");
-            Debug.LogError(e.StackTrace);
-        }
-    }
-
     private void ProcessMessage(string message)
     {
         //Check for server actions
@@ -122,29 +132,43 @@ public class TCP_Client : MonoBehaviour
             string tag = string.Empty;
             string value = string.Empty;
             int i = 0;
+
+            // Get Server Message Tag
+            i++;
+            while (message[i] != ':' && i < message.Length)
+            {
+                tag += message[i];
+                ++i;
+            }
+            i++;
             while (message[i] != ']' && i < message.Length)
             {
-                // Get Server Message Tag
-                while (message[i] != ':' && i < message.Length)
-                {
-                    tag += message[i];
-                    message.Remove(i);
-                    ++i;
-                }
-
-                i = 0;
-                while (message[i] != ']' && i < message.Length)
-                {
-                    value += message[i];
-                    message.Remove(i);
-                    ++i;
-                }
+                value += message[i];
+                ++i;
             }
-
             switch (tag)
             {
-                //case "COLOR":   { ChangeClientColor(value); }    break;
-                case "NAME":    { name = value; textName.text = value; AddTextToConsole("Name changed to: " + value); }      break;
+                case "CLEAR":   { ClearClientConsole(); }    break;
+                case "NAME":    { name.text = value; textName.text = value; AddTextToConsole("Name changed to: " + value); }      break;
+                case "KICK":    { AddTextToConsole("You have been kicked"); kickedFromChat = true; }      break;
+                case "COLOR":    
+                    {
+                        switch(value)
+                        {
+                            case "black": { color = Color.black; } break;
+                            case "blue": { color = Color.blue; } break;
+                            case "cyan": { color = Color.cyan; } break;
+                            case "green":  { color = Color.green; } break;
+                            case "grey": { color = Color.grey; } break;
+                            case "magenta": { color = Color.magenta; } break;
+                            case "red": { color = Color.red; } break; 
+                            case "yellow": { color = Color.white; } break;
+                            case "white": { color = Color.yellow; } break;
+                        }
+                        AddTextToConsole("Your color is: " + value); 
+                    }      
+                    break;
+
             }
         }
         else

@@ -20,7 +20,7 @@ public class Client_Generator : MonoBehaviour
             return;
         }
 
-        clientScript.name = (InvalidClientName()) ? ("User" + Random.Range(0, 999999)) : clientName.text;
+        clientScript.name.text = (InvalidClientName()) ? ("User" + Random.Range(0, 999999)) : clientName.text;
 
         clientName.text = "Enter Client Name";
         newClient.SetActive(true);

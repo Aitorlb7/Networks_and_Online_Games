@@ -33,12 +33,8 @@ public class TCP_Server : MonoBehaviour
     {
         BROADCAST,
         LISTENING,
-        SEND,
         NONE
     }
-    
-    Thread acceptThread;
-    Thread listenThread;
 
     private readonly object stateLock = new object();
     ServerState state = ServerState.LISTENING;
@@ -53,10 +49,6 @@ public class TCP_Server : MonoBehaviour
     public int ownPort;
     public string broadcastMessage;
 
-    //Variables to send message from the main thread
-    private User destinationUser;
-    private string messageToSend;
-
     void Start()
     {
         data = new byte[1024];
@@ -64,79 +56,81 @@ public class TCP_Server : MonoBehaviour
         serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         serverSocket.Bind(new IPEndPoint(IPAddress.Any, ownPort));
         serverSocket.Listen(10);
-
-        acceptThread = new Thread(AcceptClients);
-        listenThread = new Thread(Listen);
-        acceptThread.Start();
     }
     private void AcceptClients()
     {
-        while(true)
+        if (serverSocket.Poll(500, SelectMode.SelectRead))
         {
-            User tempUser = new User(null, null, Color.blue);
+            //Create an accept a new user
+            User tempUser = new User(null, null, GetRandomBaseColor());
 
             tempUser.socket = serverSocket.Accept();
 
-            //recievedData = tempUser.socket.Receive(data);
+            //Recieve the first message which it will always be a Name
+            recievedData = tempUser.socket.Receive(data);
 
-            //recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+            recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
 
-            tempUser.name = "A";
+            tempUser.name = recievedMessage;
 
             acceptedList.Add(tempUser);
 
+            //Tell the new user which color has been asigned
+            string colorString = "[COLOR:" + tempUser.color.ToString() + "]";
+            
+            SendMessage(colorString, tempUser);
+
+            //Tell all the user that there is an addition to the chat
             broadcastMessage = recievedMessage + " Joined the Chat";
 
             Debug.Log("Server Connected with " + recievedMessage);
 
             data = new byte[1024];
-
-            lock (stateLock) 
-                state = ServerState.BROADCAST;
+            
+            state = ServerState.BROADCAST;
         }
     }
     private void Listen()
     {
-        while(true)
+        for (int i = 0; i < acceptedList.Count; i++)
         {
-            for (int i = 0; i < acceptedList.Count; i++)
+            if (acceptedList[i].socket.Poll(500, SelectMode.SelectRead))
+                recievedData = acceptedList[i].socket.Receive(data);
+            else
+                continue;
+
+            if (recievedData == 0)
             {
-                if (acceptedList[i] != null && acceptedList[i].socket.Poll(500, SelectMode.SelectRead))
-                    recievedData = acceptedList[i].socket.Receive(data);
-                else
-                    continue;
+                Debug.Log("Client " + acceptedList[i].name + " Disconnected");
 
-                if (recievedData == 0)
-                {
-                    Debug.Log("Client " + acceptedList[i].name + " Disconnected");
+                acceptedList[i].socket.Close();
 
-                    acceptedList[i].socket.Close();
+                acceptedList[i] = null;
 
-                    acceptedList[i] = null;
+                broadcastMessage = acceptedList[i].name + " Disconnected the Chat";
 
-                    broadcastMessage = acceptedList[i].name + " Disconnected the Chat";
+                lock (stateLock)
+                    state = ServerState.BROADCAST;
 
-                    lock (stateLock)
-                        state = ServerState.BROADCAST;
-
-                    continue;
-                }
-
-                recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
-
-                Debug.Log("Recieved: " + recievedMessage);
-
-                data = new byte[1024];
-
-                ProcessMessage(recievedMessage, acceptedList[i]);
-
+                continue;
             }
+
+            recievedMessage = Encoding.ASCII.GetString(data, 0, recievedData);
+
+            Debug.Log("Recieved: " + recievedMessage);
+
+            data = new byte[1024];
+
+            ProcessMessage(recievedMessage, acceptedList[i]);
+
         }
     }
     
     void Update()
     {
-        switch(state)
+        AcceptClients();
+
+        switch (state)
         {
               case ServerState.BROADCAST:
                
@@ -146,23 +140,13 @@ public class TCP_Server : MonoBehaviour
                         SendMessage(broadcastMessage, acceptedList[i]);
                 }
 
-                state = ServerState.NONE;
+                state = ServerState.LISTENING;
 
                 break;
 
             case ServerState.LISTENING:
 
-                listenThread.Start();
-
-                state = ServerState.NONE;
-
-                break;
-
-            case ServerState.SEND:
-
-                SendMessage(messageToSend, destinationUser);
-
-                state = ServerState.NONE;
+                Listen();
 
                 break;
 
@@ -227,7 +211,7 @@ public class TCP_Server : MonoBehaviour
                 case "/kick": { KickCommand(senderUser, withoutCommand); } break;
                 case "/changename": { ChangeNameCommand(senderUser, withoutCommand); } break;
                 case "/whisper": { WhisperCommand(senderUser, withoutCommand); } break;
-                case "/clear": { ClearCommand(); } break;
+                case "/clear": { ClearCommand(senderUser); } break;
                 default: { DefaultCommand(); } break;
             }
         }
@@ -244,8 +228,12 @@ public class TCP_Server : MonoBehaviour
         
         for (int j = 0; j < acceptedList.Count; j++)
         {
-            //Substitute remote end point for Name
-            listMessage += acceptedList[j].name + ", ";
+            listMessage += acceptedList[j].name ;
+
+            if (j == acceptedList.Count - 1)
+                listMessage += ".";
+            else
+                listMessage += ", ";
         }
 
         SendMessage(listMessage, senderUser);
@@ -256,9 +244,10 @@ public class TCP_Server : MonoBehaviour
     private void HelpCommand(User senderUser)
     {
         string helpMessage = "Available commands:\n"
+                            + "/whisper UserName -> Send Message to a specific user"
                             + "/list -> Show all the users connected\n"
                             + "/kick -> Kick an specific user\n"
-                            + "/changeName -> Change your name\n"
+                            + "/changename -> Change your name\n"
                             + "/clear -> Clear your chat history\n";
 
         SendMessage(helpMessage, senderUser);
@@ -276,11 +265,19 @@ public class TCP_Server : MonoBehaviour
         {
             if(acceptedList[i].name == name)
             {
+                //Tell the client User he has been kicked
+                string kickMessage = "[KICK:" + user.name + "]";
+                SendMessage(kickMessage, acceptedList[i]);
+
+                //Tell the other users that one user has been kicked
                 acceptedList[i].socket.Close();
                 acceptedList[i].socket = null;
                 acceptedList.RemoveAt(i);
+                broadcastMessage = "The user " + name + "has been kicked out.";
+                state = ServerState.BROADCAST;
             }
         }
+
     }
 
     private void ChangeNameCommand(User user, string newName)
@@ -289,13 +286,9 @@ public class TCP_Server : MonoBehaviour
         //Returned message should be [NAME: newName];
 
         user.name = newName;
-        string changeNameMessage = "[NAME: " + user.name + "]";
+        string changeNameMessage = "[NAME:" + user.name + "]";
 
-        destinationUser = user;
-        messageToSend = changeNameMessage;
-
-        state = ServerState.SEND;
-
+        SendMessage(changeNameMessage, user);
     }
 
     private void WhisperCommand(User user, string nameAndMessage)
@@ -305,7 +298,7 @@ public class TCP_Server : MonoBehaviour
         int h = 0;
 
         //Get name of the destination user
-        while (message[h] != ' ')
+        while (nameAndMessage[h] != ' ')
         {
             name += nameAndMessage[h];
 
@@ -329,19 +322,22 @@ public class TCP_Server : MonoBehaviour
         {
             if (acceptedList[i].name == name)
             {
-                destinationUser = acceptedList[i];
-                messageToSend = message;
-                state = ServerState.SEND;
+                string messageToSend = user.name + ": " + message;
+
+                SendMessage(messageToSend, acceptedList[i]);
             }
         }
 
 
     }
 
-    private void ClearCommand()
+    private void ClearCommand(User user)
     {
         //Clear the client's chat messages
-        //Is it really necessary to have it go to the server to clear local messages?
+
+        string message = "[CLEAR:" + user.name + "]";
+
+        SendMessage(message, user);
     }
 
     private void DefaultCommand()
@@ -402,9 +398,6 @@ public class TCP_Server : MonoBehaviour
     private void OnDestroy()
     {
         Debug.Log("Disconecting Server");
-
-        acceptThread.Abort();
-        listenThread.Abort();
 
         serverSocket.Close();
         serverSocket = null;
